@@ -24,6 +24,8 @@ using System.IO;
 using Warcraft.Core;
 using System.Collections.Generic;
 using liblistfile.Score;
+using System.Linq;
+using System.Text;
 
 namespace liblistfile
 {
@@ -34,6 +36,7 @@ namespace liblistfile
 	/// The file (when serialized) is structured as follows:
 	/// 
 	/// char[4]					: Signature (always DICT)
+	/// uint32					: Version
 	/// uint64_t				: RecordCount
 	/// DictRec[RecordCount]	: Dictionary entries
 	/// </summary>
@@ -51,6 +54,22 @@ namespace liblistfile
 		public const string Extension = "dic";
 
 		/// <summary>
+		/// The file format version.
+		/// </summary>
+		public const uint Version = 1;
+
+		/// <summary>
+		/// Gets or sets the entry score tolerance. This value is used when determining what values are
+		/// considered low-scoring.
+		/// </summary>
+		/// <value>The entry score tolerance.</value>
+		public float EntryScoreTolerance
+		{
+			get;
+			set;
+		}
+
+		/// <summary>
 		/// The dictionary entries.
 		///
 		/// Contains values in the following format:
@@ -59,6 +78,19 @@ namespace liblistfile
 		/// </summary>
 		private readonly Dictionary<string, ListfileDictionaryEntry> DictionaryEntries = 
 			new Dictionary<string, ListfileDictionaryEntry>();
+
+
+		/// <summary>
+		/// Gets the entries which have a low score.
+		/// </summary>
+		/// <value>The entries with a low score.</value>
+		public IEnumerable<KeyValuePair<string, ListfileDictionaryEntry>> LowScoreEntries
+		{
+			get
+			{
+				return DictionaryEntries.Where(pair => pair.Value.Score <= EntryScoreTolerance);
+			}
+		}
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="liblistfile.ListfileDictionary"/> class.
@@ -86,14 +118,58 @@ namespace liblistfile
 						throw new InvalidDataException("The input data did not begin with a dictionary signature.");
 					}
 
+					uint Version = br.ReadUInt32();
+
 					ulong RecordCount = br.ReadUInt64();
 					for (ulong i = 0; i < RecordCount; ++i)
 					{
 						ListfileDictionaryEntry entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
 						this.DictionaryEntries.Add(entry.Word.ToUpperInvariant(), entry);
 					}
+
+					if (Version < ListfileDictionary.Version)
+					{
+						// Perform any extra actions required
+						if (Version == 0)
+						{
+							// From version 0 and up, the score calculation was altered. Recalculate all scores.
+							foreach (KeyValuePair<string, ListfileDictionaryEntry> entry in this.DictionaryEntries)
+							{
+								entry.Value.RecalculateScore();
+							}
+						}
+					}
 				}
 			}
+		}
+
+		/// <summary>
+		/// Optimizes the provided list using the loaded dictionary.
+		/// </summary>
+		/// <returns>The optimized list.</returns>
+		/// <param name="unoptimizedList">Unoptimized list.</param>
+		public List<string> OptimizeList(List<string> unoptimizedList)
+		{
+			List<string> optimizedList = new List<string>();
+			foreach (string path in unoptimizedList)
+			{
+				StringBuilder sb = new StringBuilder();
+
+				string[] parts = path.Split('\\');
+				for (int i = 0; i < parts.Length; ++i)
+				{
+					sb.Append(GetWordEntry(parts[i]).Word);
+
+					if (i < parts.Length)
+					{
+						sb.Append("\\");
+					}
+				}
+
+				optimizedList.Add(sb.ToString());
+			}
+
+			return optimizedList;
 		}
 
 		/// <summary>
@@ -127,14 +203,17 @@ namespace liblistfile
 		/// Adds an entry for the provided word if it's not already in the dictionary.
 		/// </summary>
 		/// <param name="word">Word.</param>
-		public void AddWordEntry(string word)
+		public bool AddWordEntry(string word)
 		{
 			if (!ContainsWord(word))
 			{
 				ListfileDictionaryEntry newEntry = new ListfileDictionaryEntry(word, WordScore.Calculate(word));
 
 				this.DictionaryEntries.Add(word.ToUpperInvariant(), newEntry);
+				return true;
 			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -143,15 +222,15 @@ namespace liblistfile
 		/// the one in the dictionary.
 		/// </summary>
 		/// <param name="word">Word.</param>
-		public void UpdateWordEntry(string word)
+		public bool UpdateWordEntry(string word)
 		{
 			if (!ContainsWord(word))
 			{
-				AddWordEntry(word);
+				return AddWordEntry(word);
 			}
 			else
 			{
-				this.DictionaryEntries[word.ToUpperInvariant()].UpdateWord(word);
+				return this.DictionaryEntries[word.ToUpperInvariant()].UpdateWord(word);
 			}
 		}
 
@@ -170,6 +249,7 @@ namespace liblistfile
 						bw.Write(c);
 					}
 
+					bw.Write((uint)1);
 					bw.Write((ulong)this.DictionaryEntries.Count);
 
 					foreach (KeyValuePair<string, ListfileDictionaryEntry> DictionaryEntry in DictionaryEntries)
@@ -243,6 +323,25 @@ namespace liblistfile
 			{
 				return false;
 			}
+		}
+
+		/// <summary>
+		/// Forcibly sets the word and score.
+		/// </summary>
+		/// <param name="word">Word.</param>
+		/// <param name="score">Score.</param>
+		public void ForceUpdateWord(string word, float score)
+		{
+			this.Word = word;
+			this.Score = score;
+		}
+
+		/// <summary>
+		/// Recalculates the score of the word.
+		/// </summary>
+		public void RecalculateScore()
+		{
+			this.Score = WordScore.Calculate(this.Word);			
 		}
 
 		/// <summary>

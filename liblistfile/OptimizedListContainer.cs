@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using Ionic.BZip2;
 using Warcraft.Core;
+using System.Security.Cryptography;
 
 namespace liblistfile
 {
@@ -36,6 +37,7 @@ namespace liblistfile
 	/// The file is structured as follows:
 	/// 
 	/// char[4]						: Signature (always OLIC)
+	/// uint32_t					: Version
 	/// char[]						: ArchiveName (the name of the archive which 
 	/// 							  uses one of the lists)
 	/// uint32_t					: ListCount (number of stored optimized lists)
@@ -54,6 +56,11 @@ namespace liblistfile
 		/// The file extension used for serialized list containers.
 		/// </summary>
 		public const string Extension = "olc";
+
+		/// <summary>
+		/// The file format version.
+		/// </summary>
+		public const uint Version = 1;
 
 		/// <summary>
 		/// The name of the archive this container has lists for.
@@ -92,6 +99,8 @@ namespace liblistfile
 						throw new InvalidDataException("The input data did not begin with a container signature.");
 					}
 
+					uint Version = br.ReadUInt32();
+
 					this.ArchiveName = br.ReadNullTerminatedString();
 
 					uint entryCount = br.ReadUInt32();
@@ -99,6 +108,11 @@ namespace liblistfile
 					{
 						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(PeekListBlockSize(br) + 4)));
 						this.OptimizedLists.Add(optimizedList);
+					}
+
+					if (Version < OptimizedListContainer.Version)
+					{
+						// Do whatever updating needs to be done
 					}
 				}
 			}
@@ -154,7 +168,7 @@ namespace liblistfile
 					{
 						bw.Write(c);
 					}
-
+					bw.Write(OptimizedListContainer.Version);
 					bw.WriteNullTerminatedString(this.ArchiveName);
 					bw.Write(this.OptimizedLists.Count);
 
@@ -175,8 +189,8 @@ namespace liblistfile
 	/// 
 	/// char[4]						: Signature (always LIST)
 	/// uint64_t					: BlockSize (byte count, always CompressedData + 64)
-	/// int512_t					: RSASignature (Weak signature of the archive that
-	/// 							  this list is valid for). 64 bytes.
+	/// int128_t					: ArchiveHash (MD5 hash of the archive the list works for.) 16 bytes.
+	/// int128_t					: ListHash (MD5 hash of the compressed optimized list.) 16 bytes.
 	/// byte[]						: BZip2 compressed cleartext list of optimized
 	///							 	  list entries.
 	/// </summary>
@@ -189,9 +203,14 @@ namespace liblistfile
 		public const string Signature = "LIST";
 
 		/// <summary>
-		/// A 512-bit RSA signature of the archive this list is made for.
+		/// A 126-bit MD5 hash of the archive this list is made for.
 		/// </summary>
-		public readonly byte[] ArchiveSignature = new byte[64];
+		public readonly byte[] ArchiveHash = new byte[16];
+
+		/// <summary>
+		/// A 126-bit MD5 hash of the compressed list data.
+		/// </summary>
+		public readonly byte[] ListHash = new byte[16];
 
 		/// <summary>
 		/// The optimized paths contained in this list.
@@ -202,11 +221,11 @@ namespace liblistfile
 		/// Initializes a new instance of the <see cref="liblistfile.OptimizedList"/> class.
 		/// This constructor creates a new, empty OptimizedList.
 		/// </summary>
-		/// <param name="InArchiveSignature">In archive signature.</param>
+		/// <param name="InArchiveHash">In archive signature.</param>
 		/// <param name="InOptimizedPaths">In optimized paths.</param>
-		public OptimizedList(byte[] InArchiveSignature, List<string> InOptimizedPaths)
+		public OptimizedList(byte[] InArchiveHash, List<string> InOptimizedPaths)
 		{
-			this.ArchiveSignature = InArchiveSignature;
+			this.ArchiveHash = InArchiveHash;
 			this.OptimizedPaths = InOptimizedPaths;
 		}
 
@@ -229,10 +248,11 @@ namespace liblistfile
 
 					ulong BlockSize = br.ReadUInt64();
 
-					// Read the RSA archive signature.
-					this.ArchiveSignature = br.ReadBytes(this.ArchiveSignature.Length);
+					// Read the MD5 archive signature.
+					this.ArchiveHash = br.ReadBytes(this.ArchiveHash.Length);
+					this.ListHash = br.ReadBytes(this.ListHash.Length);
 
-					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)(BlockSize - (ulong)this.ArchiveSignature.LongLength))))
+					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)(BlockSize - (ulong)this.ArchiveHash.LongLength))))
 					{
 						using (BZip2InputStream bz = new BZip2InputStream(compressedData))
 						{
@@ -293,10 +313,16 @@ namespace liblistfile
 
 
 					ulong listSize = (ulong)compressedList.LongLength;
-					ulong blockSize = (ulong)this.ArchiveSignature.LongLength + listSize;
+					ulong blockSize = (ulong)this.ArchiveHash.LongLength + listSize;
 					bw.Write(blockSize);
 
-					bw.Write(this.ArchiveSignature);
+					bw.Write(this.ArchiveHash);
+					// Calculate and write the hash of the compressed data
+					using (MD5 md5 = MD5.Create())
+					{
+						bw.Write(md5.ComputeHash(compressedList));
+					}
+
 					bw.Write(compressedList);
 				}
 
@@ -333,7 +359,7 @@ namespace liblistfile
 		/// <see cref="liblistfile.OptimizedList"/>; otherwise, <c>false</c>.</returns>
 		public bool Equals(OptimizedList other)
 		{
-			return this.ArchiveSignature.Equals(other.ArchiveSignature) &&
+			return this.ArchiveHash.Equals(other.ArchiveHash) &&
 			new HashSet<string>(this.OptimizedPaths).SetEquals(new HashSet<string>(other.OptimizedPaths));
 		}
 
@@ -343,7 +369,7 @@ namespace liblistfile
 		/// <returns>A hash code for this instance that is suitable for use in hashing algorithms and data structures such as a hash table.</returns>
 		public override int GetHashCode()
 		{
-			return (this.ArchiveSignature.GetHashCode() + this.OptimizedPaths.GetHashCode()).GetHashCode();
+			return (this.ArchiveHash.GetHashCode() + this.OptimizedPaths.GetHashCode()).GetHashCode();
 		}
 
 		#endregion
