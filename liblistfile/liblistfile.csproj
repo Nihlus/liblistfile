@@ -43,11 +43,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="OptimizedListContainer.cs" />
     <Compile Include="ListfileDictionary.cs" />
-    <Compile Include="Score\WordScore.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="Score\TermScore.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Score\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Dictionary\dictionary.dic" />
   </ItemGroup>
 </Project>

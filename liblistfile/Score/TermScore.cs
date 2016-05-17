@@ -25,8 +25,8 @@ using System.Text;
 namespace liblistfile.Score
 {
 	/// <summary>
-	/// PascalCase word score calculator.
-	/// This class calculates the PascalCase score of the provided word. A higher score indicates better compliance
+	/// PascalCase term score calculator.
+	/// This class calculates the PascalCase score of the provided term. A higher score indicates better compliance
 	/// with the PascalCase definition.
 	///
 	/// In general, the more mixed a word is, the better the score. All-caps words get the lowest score (a 0), 
@@ -35,7 +35,7 @@ namespace liblistfile.Score
 	/// Overall, the score is merely an indication and doesn't reliably detect propre PascalCase, 
 	/// since it doesn't know anything about actual words. However, it's good enough for most purposes.
 	/// </summary>
-	public static class WordScore
+	public static class TermScore
 	{
 		/// <summary>
 		/// Calculates the PascalCase score of the provided word.

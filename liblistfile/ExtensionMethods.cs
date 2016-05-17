@@ -23,6 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Warcraft.Core;
+using System.Text.RegularExpressions;
+using Ionic.BZip2;
+using System.Security.Cryptography;
 
 namespace liblistfile
 {
@@ -31,6 +34,71 @@ namespace liblistfile
 	/// </summary>
 	public static class ExtensionMethods
 	{
+		public static byte[] ComputeHash(this byte[] byteArray)
+		{
+			using (MD5 md5 = MD5.Create())
+			{
+				return md5.ComputeHash(byteArray);
+			}
+		}
+
+		public static byte[] Compress(this byte[] uncompressedBytes)
+		{
+			byte[] compressedBytes;
+			if (uncompressedBytes.Length > 0)
+			{
+				using (MemoryStream om = new MemoryStream())
+				{
+					using (BZip2OutputStream bo = new BZip2OutputStream(om))
+					{
+						byte[] serializedList = uncompressedBytes;
+						bo.Write(serializedList, 0, serializedList.Length);
+					}
+					compressedBytes = om.ToArray();
+				}
+			}
+			else
+			{
+				compressedBytes = new byte[0];
+			}
+
+			return compressedBytes;
+		}
+
+		public static byte[] Compress(this List<string> inputList)
+		{
+			byte[] compressedList;
+			if (inputList.Count > 0)
+			{
+				using (MemoryStream om = new MemoryStream())
+				{
+					using (BZip2OutputStream bo = new BZip2OutputStream(om))
+					{
+						byte[] serializedList = inputList.Serialize();
+						bo.Write(serializedList, 0, serializedList.Length);
+					}
+					compressedList = om.ToArray();
+				}
+			}
+			else
+			{
+				compressedList = new byte[0];
+			}
+
+			return compressedList;
+		}
+
+		public static string ReplaceCaseInsensitive(this string input, string search, string replacement)
+		{
+			string result = Regex.Replace(
+				                input,
+				                Regex.Escape(search), 
+				                replacement.Replace("$", "$$"), 
+				                RegexOptions.IgnoreCase
+			                );
+			return result;
+		}
+
 		/// <summary>
 		/// Serialize the specified stringList.
 		/// </summary>

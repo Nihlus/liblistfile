@@ -25,6 +25,7 @@ using System.IO;
 using Ionic.BZip2;
 using Warcraft.Core;
 using System.Security.Cryptography;
+using System.Linq;
 
 namespace liblistfile
 {
@@ -65,12 +66,12 @@ namespace liblistfile
 		/// <summary>
 		/// The name of the archive this container has lists for.
 		/// </summary>
-		public readonly string ArchiveName;
+		public readonly string PackageName;
 
 		/// <summary>
 		/// The optimized lists contained in this container.
 		/// </summary>
-		public readonly List<OptimizedList> OptimizedLists = new List<OptimizedList>();
+		public readonly Dictionary<byte[], OptimizedList> OptimizedLists = new Dictionary<byte[], OptimizedList>(new ByteArrayComparer());
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="liblistfile.OptimizedListContainer"/> class.
@@ -79,7 +80,7 @@ namespace liblistfile
 		/// <param name="InArchiveName">In archive name.</param>
 		public OptimizedListContainer(string InArchiveName)
 		{
-			this.ArchiveName = InArchiveName;
+			this.PackageName = InArchiveName;
 		}
 
 		/// <summary>
@@ -101,13 +102,13 @@ namespace liblistfile
 
 					uint Version = br.ReadUInt32();
 
-					this.ArchiveName = br.ReadNullTerminatedString();
+					this.PackageName = br.ReadNullTerminatedString();
 
 					uint entryCount = br.ReadUInt32();
 					for (int i = 0; i < entryCount; ++i)
 					{
-						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(PeekListBlockSize(br) + 4)));
-						this.OptimizedLists.Add(optimizedList);
+						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(PeekListBlockSize(br) + 12)));
+						this.OptimizedLists.Add(optimizedList.PackageHash, optimizedList);
 					}
 
 					if (Version < OptimizedListContainer.Version)
@@ -142,15 +143,55 @@ namespace liblistfile
 		}
 
 		/// <summary>
+		/// Determines whether the specifed package hash has any lists stored in the container.
+		/// </summary>
+		/// <returns><c>true</c>, if the hash has any lists, <c>false</c> otherwise.</returns>
+		/// <param name="PackageHash">Package hash.</param>
+		public bool ContainsPackageList(byte[] PackageHash)
+		{
+			return this.OptimizedLists.ContainsKey(PackageHash);
+		}
+
+		/// <summary>
+		/// Determines whether the specifed list is the same as the one which is stored in the container.
+		/// </summary>
+		/// <returns><c>true</c> if the specifed list is the same as the one which is stored in the container; otherwise, <c>false</c>.</returns>
+		/// <param name="List">Optimized list.</param>
+		public bool IsListSameAsStored(OptimizedList List)
+		{
+			if (ContainsPackageList(List.PackageHash))
+			{
+				OptimizedList optimizedList = this.OptimizedLists[List.PackageHash];
+				return optimizedList.ListHash.Equals(List.ListHash);
+			}
+			else
+			{
+				throw new KeyNotFoundException("The specified package did not have an optimized list stored.");
+			}
+		}
+
+		/// <summary>
 		/// Adds the optimized list to the container. If the list is already in the container, 
 		/// it is not added.
 		/// </summary>
 		/// <param name="List">List.</param>
 		public void AddOptimizedList(OptimizedList List)
 		{
-			if (!this.OptimizedLists.Contains(List))
+			if (!this.OptimizedLists.ContainsKey(List.PackageHash))
 			{
-				this.OptimizedLists.Add(List);
+				this.OptimizedLists.Add(List.PackageHash, List);
+			}
+		}
+
+		/// <summary>
+		/// Replaces the optimized list stored in the container (under the same package hash) with the provided list.
+		/// </summary>
+		/// <param name="List">List.</param>
+		public void ReplaceOptimizedList(OptimizedList List)
+		{
+			if (this.OptimizedLists.ContainsKey(List.PackageHash))
+			{
+				this.OptimizedLists[List.PackageHash] = List;
 			}
 		}
 
@@ -169,17 +210,41 @@ namespace liblistfile
 						bw.Write(c);
 					}
 					bw.Write(OptimizedListContainer.Version);
-					bw.WriteNullTerminatedString(this.ArchiveName);
+					bw.WriteNullTerminatedString(this.PackageName);
 					bw.Write(this.OptimizedLists.Count);
 
-					foreach (OptimizedList List in this.OptimizedLists)
+					foreach (KeyValuePair<byte[], OptimizedList> ListPair in this.OptimizedLists)
 					{
-						bw.Write(List.GetBytes());
+						bw.Write(ListPair.Value.GetBytes());
 					}
 				}
 
 				return ms.ToArray();
 			}
+		}
+	}
+
+	public class ByteArrayComparer : IEqualityComparer<byte[]>
+	{
+		public bool Equals(byte[] left, byte[] right)
+		{
+			if (left == null || right == null)
+			{
+				return left == right;
+			}
+
+			return left.SequenceEqual(right);
+		}
+
+		public int GetHashCode(byte[] key)
+		{
+			if (key == null)
+			{
+				throw new ArgumentNullException("key");
+			
+			}
+
+			return key.Sum(b => b);
 		}
 	}
 
@@ -189,7 +254,7 @@ namespace liblistfile
 	/// 
 	/// char[4]						: Signature (always LIST)
 	/// uint64_t					: BlockSize (byte count, always CompressedData + 64)
-	/// int128_t					: ArchiveHash (MD5 hash of the archive the list works for.) 16 bytes.
+	/// int128_t					: PackageHash (MD5 hash of the package the list works for.) 16 bytes.
 	/// int128_t					: ListHash (MD5 hash of the compressed optimized list.) 16 bytes.
 	/// byte[]						: BZip2 compressed cleartext list of optimized
 	///							 	  list entries.
@@ -205,7 +270,7 @@ namespace liblistfile
 		/// <summary>
 		/// A 126-bit MD5 hash of the archive this list is made for.
 		/// </summary>
-		public readonly byte[] ArchiveHash = new byte[16];
+		public readonly byte[] PackageHash = new byte[16];
 
 		/// <summary>
 		/// A 126-bit MD5 hash of the compressed list data.
@@ -221,12 +286,14 @@ namespace liblistfile
 		/// Initializes a new instance of the <see cref="liblistfile.OptimizedList"/> class.
 		/// This constructor creates a new, empty OptimizedList.
 		/// </summary>
-		/// <param name="InArchiveHash">In archive signature.</param>
+		/// <param name="InPackageHash">In archive signature.</param>
 		/// <param name="InOptimizedPaths">In optimized paths.</param>
-		public OptimizedList(byte[] InArchiveHash, List<string> InOptimizedPaths)
+		public OptimizedList(byte[] InPackageHash, List<string> InOptimizedPaths)
 		{
-			this.ArchiveHash = InArchiveHash;
+			this.PackageHash = InPackageHash;
 			this.OptimizedPaths = InOptimizedPaths;
+
+			this.ListHash = this.OptimizedPaths.Compress().ComputeHash();
 		}
 
 		/// <summary>
@@ -249,10 +316,11 @@ namespace liblistfile
 					ulong BlockSize = br.ReadUInt64();
 
 					// Read the MD5 archive signature.
-					this.ArchiveHash = br.ReadBytes(this.ArchiveHash.Length);
+					this.PackageHash = br.ReadBytes(this.PackageHash.Length);
 					this.ListHash = br.ReadBytes(this.ListHash.Length);
 
-					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)(BlockSize - (ulong)this.ArchiveHash.LongLength))))
+					int compressedDataSize = (int)((long)(BlockSize - sizeof(ulong)) - (this.PackageHash.LongLength + this.ListHash.LongLength));
+					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes(compressedDataSize)))
 					{
 						using (BZip2InputStream bz = new BZip2InputStream(compressedData))
 						{
@@ -265,7 +333,7 @@ namespace liblistfile
 								decompressedData.Position = 0;
 								using (BinaryReader listReader = new BinaryReader(decompressedData))
 								{
-									while (decompressedData.Position > decompressedData.Length)
+									while (decompressedData.Position < decompressedData.Length)
 									{
 										this.OptimizedPaths.Add(listReader.ReadNullTerminatedString());
 									}
@@ -292,36 +360,14 @@ namespace liblistfile
 						bw.Write(c);
 					}
 
-					byte[] compressedList;
-					if (this.OptimizedPaths.Count > 0)
-					{
-						// Compress the list so we can calculate the final block size
-						using (MemoryStream om = new MemoryStream())
-						{
-							using (BZip2OutputStream bo = new BZip2OutputStream(om))
-							{
-								byte[] serializedList = this.OptimizedPaths.Serialize();
-								bo.Write(serializedList, 0, serializedList.Length);
-							}
-							compressedList = om.ToArray();
-						}
-					}
-					else
-					{
-						compressedList = new byte[0];
-					}
+					byte[] compressedList = this.OptimizedPaths.Compress();
 
-
-					ulong listSize = (ulong)compressedList.LongLength;
-					ulong blockSize = (ulong)this.ArchiveHash.LongLength + listSize;
+					ulong blockSize = sizeof(ulong) + (ulong)this.PackageHash.LongLength + (ulong)this.ListHash.LongLength + (ulong)compressedList.LongLength;
 					bw.Write(blockSize);
 
-					bw.Write(this.ArchiveHash);
+					bw.Write(this.PackageHash);
 					// Calculate and write the hash of the compressed data
-					using (MD5 md5 = MD5.Create())
-					{
-						bw.Write(md5.ComputeHash(compressedList));
-					}
+					bw.Write(compressedList.ComputeHash());
 
 					bw.Write(compressedList);
 				}
@@ -359,7 +405,7 @@ namespace liblistfile
 		/// <see cref="liblistfile.OptimizedList"/>; otherwise, <c>false</c>.</returns>
 		public bool Equals(OptimizedList other)
 		{
-			return this.ArchiveHash.Equals(other.ArchiveHash) &&
+			return this.PackageHash.Equals(other.PackageHash) &&
 			new HashSet<string>(this.OptimizedPaths).SetEquals(new HashSet<string>(other.OptimizedPaths));
 		}
 
@@ -369,7 +415,7 @@ namespace liblistfile
 		/// <returns>A hash code for this instance that is suitable for use in hashing algorithms and data structures such as a hash table.</returns>
 		public override int GetHashCode()
 		{
-			return (this.ArchiveHash.GetHashCode() + this.OptimizedPaths.GetHashCode()).GetHashCode();
+			return (this.PackageHash.GetHashCode() + this.OptimizedPaths.GetHashCode()).GetHashCode();
 		}
 
 		#endregion

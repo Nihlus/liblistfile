@@ -26,19 +26,22 @@ using System.Collections.Generic;
 using liblistfile.Score;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using Ionic.BZip2;
 
 namespace liblistfile
 {
 	/// <summary>
-	/// Dictionary file for listtool. Contains a dictionary of words used in 
-	/// listfiles, and their calculated word scores.
+	/// Dictionary file for listtool. Contains a dictionary of terms used in 
+	/// listfiles, and their calculated term scores.
 	/// 
 	/// The file (when serialized) is structured as follows:
 	/// 
-	/// char[4]					: Signature (always DICT)
-	/// uint32					: Version
-	/// uint64_t				: RecordCount
-	/// DictRec[RecordCount]	: Dictionary entries
+	/// char[4]							: Signature (always DICT)
+	/// uint32							: Version
+	/// uint64_t						: RecordCount
+	/// uint64_t 						: CompressedDictionarySize
+	/// byte[CompressedDictionarySize]	: BZip2-compressed block of dictionary entries
 	/// </summary>
 	public class ListfileDictionary
 	{
@@ -56,14 +59,25 @@ namespace liblistfile
 		/// <summary>
 		/// The file format version.
 		/// </summary>
-		public const uint Version = 1;
+		public const uint Version = 2;
 
 		/// <summary>
-		/// Gets or sets the entry score tolerance. This value is used when determining what values are
-		/// considered low-scoring.
+		/// Gets or sets the low entry score tolerance. This value is used when determining what values are
+		/// considered high-scoring.
 		/// </summary>
 		/// <value>The entry score tolerance.</value>
-		public float EntryScoreTolerance
+		public float EntryLowScoreTolerance
+		{
+			get;
+			set;
+		}
+
+		/// <summary>
+		/// Gets or sets the high entry score tolerance. This value is used when determining what values are
+		/// considered high-scoring.
+		/// </summary>
+		/// <value>The entry score tolerance.</value>
+		public float EntryHighScoreTolerance
 		{
 			get;
 			set;
@@ -73,8 +87,8 @@ namespace liblistfile
 		/// The dictionary entries.
 		///
 		/// Contains values in the following format:
-		/// Key: An all-uppercase word.
-		/// Value: A dictionary entry containing the best found format for the word, along with a score.
+		/// Key: An all-uppercase term.
+		/// Value: A dictionary entry containing the best found format for the term, along with a score.
 		/// </summary>
 		private readonly Dictionary<string, ListfileDictionaryEntry> DictionaryEntries = 
 			new Dictionary<string, ListfileDictionaryEntry>();
@@ -88,9 +102,26 @@ namespace liblistfile
 		{
 			get
 			{
-				return DictionaryEntries.Where(pair => pair.Value.Score <= EntryScoreTolerance);
+				return DictionaryEntries.Where(pair => pair.Value.Score <= EntryLowScoreTolerance);
 			}
 		}
+
+		/// <summary>
+		/// Gets the entries which have a high score.
+		/// </summary>
+		/// <value>The entries with a low score.</value>
+		public IEnumerable<KeyValuePair<string, ListfileDictionaryEntry>> HighScoreEntries
+		{
+			get
+			{
+				return DictionaryEntries.Where(pair => pair.Value.Score >= EntryHighScoreTolerance);
+			}
+		}
+
+		/// <summary>
+		/// The dictionary words, extracted from the high-scoring entries.
+		/// </summary>
+		public readonly List<string> DictionaryWords = new List<string>();
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="liblistfile.ListfileDictionary"/> class.
@@ -98,7 +129,8 @@ namespace liblistfile
 		/// </summary>
 		public ListfileDictionary()
 		{
-
+			this.EntryLowScoreTolerance = 0.0f;
+			this.EntryHighScoreTolerance = 3.0f;
 		}
 
 		/// <summary>
@@ -107,6 +139,7 @@ namespace liblistfile
 		/// </summary>
 		/// <param name="data">Data.</param>
 		public ListfileDictionary(byte[] data)
+			: this()
 		{
 			using (MemoryStream ms = new MemoryStream(data))
 			{
@@ -117,18 +150,21 @@ namespace liblistfile
 					{
 						throw new InvalidDataException("The input data did not begin with a dictionary signature.");
 					}
-
 					uint Version = br.ReadUInt32();
-
-					ulong RecordCount = br.ReadUInt64();
-					for (ulong i = 0; i < RecordCount; ++i)
-					{
-						ListfileDictionaryEntry entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
-						this.DictionaryEntries.Add(entry.Word.ToUpperInvariant(), entry);
-					}
 
 					if (Version < ListfileDictionary.Version)
 					{
+						if (Version < 2)
+						{
+							// Version 2 started compressing the dictionary block
+							ulong RecordCount = br.ReadUInt64();
+							for (ulong i = 0; i < RecordCount; ++i)
+							{
+								ListfileDictionaryEntry entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
+								this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
+							}
+						}
+
 						// Perform any extra actions required
 						if (Version == 0)
 						{
@@ -139,8 +175,126 @@ namespace liblistfile
 							}
 						}
 					}
+					else
+					{
+						// The most current implementation
+
+						ulong RecordCount = br.ReadUInt64();
+						ulong RecordBlockSize = br.ReadUInt64();
+
+						using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)RecordBlockSize)))
+						{
+							using (BZip2InputStream bz = new BZip2InputStream(compressedData))
+							{
+								using (MemoryStream decompressedData = new MemoryStream())
+								{
+									// Decompress the data into the stream
+									bz.CopyTo(decompressedData);
+
+									// Read the dictionary elements
+									decompressedData.Position = 0;
+									using (BinaryReader zr = new BinaryReader(decompressedData))
+									{
+										for (ulong i = 0; i < RecordCount; ++i)
+										{
+											ListfileDictionaryEntry entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
+											this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
+										}
+									}
+								}
+							}
+						}
+					}
+
+					// Extract all good words from high-scoring terms
+					foreach (KeyValuePair<string, ListfileDictionaryEntry> DictionaryEntry in this.HighScoreEntries)
+					{
+						AddNewTermWords(DictionaryEntry.Value.Term, false);
+					}
+
+					this.DictionaryWords.Sort(CompareWordsByLength);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Adds new words from a new term.
+		/// </summary>
+		/// <param name="term">Term.</param>
+		/// <param name="bSortDictionary">Whether or not the dictionary should be sorted after words have been added.</param>
+		public void AddNewTermWords(string term, bool bSortDictionary = true)
+		{
+			foreach (string word in GetWordsFromTerm(term))
+			{
+				if (!this.DictionaryWords.Contains(word))
+				{
+					this.DictionaryWords.Add(word);
+				}
+			}
+
+			if (bSortDictionary)
+			{
+				this.DictionaryWords.Sort(CompareWordsByLength);			
+			}
+		}
+
+		/// <summary>
+		/// Guess the correct format of the specified term based on the words in the dictionary.
+		/// </summary>
+		/// <param name="term">Term.</param>
+		public string Guess(string term)
+		{
+			string transientTerm = Path.GetFileNameWithoutExtension(term);
+			string extension = Path.GetExtension(term);
+
+			// Get everything in the term that isn't an abbreviation or a non-word character
+			MatchCollection matches = Regex.Matches(transientTerm, "([a-zA-Z]{4,})");
+
+			foreach (Match match in matches)
+			{
+				string transientMatch = match.Value;
+				foreach (string word in this.DictionaryWords)
+				{
+					transientMatch = transientMatch.ReplaceCaseInsensitive(word.ToUpperInvariant(), word);
+				}
+
+				transientTerm = transientTerm.ReplaceCaseInsensitive(transientMatch.ToUpperInvariant(), transientMatch);
+			}
+
+			// Get all abbreviations between underscores
+			MatchCollection abbreviationMatches = Regex.Matches(transientTerm, "(?<=_|^)[A-Z]{2,3}(?=_)");
+
+			foreach (Match match in abbreviationMatches)
+			{
+				string transientMatch = match.Value;
+
+				// We'll only look at words which have the same length as the abbreviation
+				foreach (string word in this.DictionaryWords.Where(str => str.Length == match.Value.Length))
+				{
+					transientMatch = transientMatch.ReplaceCaseInsensitive(word.ToUpperInvariant(), word);
+				}
+
+				transientTerm = transientTerm.ReplaceCaseInsensitive(transientMatch.ToUpperInvariant(), transientMatch);
+			}
+
+			return transientTerm + extension.ToLowerInvariant();
+		}
+
+
+		/// <summary>
+		/// Guesses the correct casing of the term using assisted scoring. First, the casing is guessed using
+		/// the dictionary, then TermScore is used to corrent mangled casing in unknown words. Then, it's reguessed to
+		/// correct any issues generated by the TermScore guess.
+		/// </summary>
+		/// <returns>The scored.</returns>
+		/// <param name="term">Term.</param>
+		public string GuessScored(string term)
+		{
+			string transientTerm = Guess(term);
+			string scoredTransientTerm = TermScore.Guess(transientTerm);
+			string correctedScoredTransientTerm = Guess(scoredTransientTerm);
+
+			return correctedScoredTransientTerm;
 		}
 
 		/// <summary>
@@ -158,7 +312,7 @@ namespace liblistfile
 				string[] parts = path.Split('\\');
 				for (int i = 0; i < parts.Length; ++i)
 				{
-					sb.Append(GetWordEntry(parts[i]).Word);
+					sb.Append(GetTermEntry(parts[i]).Term);
 
 					if (i < parts.Length)
 					{
@@ -173,25 +327,46 @@ namespace liblistfile
 		}
 
 		/// <summary>
-		/// Checks if the dictionary contains the specified word.
+		/// Gets the words from term.
 		/// </summary>
-		/// <returns><c>true</c>, if the dictionary contains the word, <c>false</c> otherwise.</returns>
-		/// <param name="word">Word.</param>
-		public bool ContainsWord(string word)
+		/// <returns>The words from term.</returns>
+		/// <param name="term">Term.</param>
+		public static List<string> GetWordsFromTerm(string term)
 		{
-			return this.DictionaryEntries.ContainsKey(word.ToUpperInvariant());
+			MatchCollection matches = Regex.Matches(term, "([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)");
+
+			List<string> words = new List<string>();
+			foreach (Match match in matches)
+			{
+				if (!words.Contains(match.Value))
+				{
+					words.Add(match.Value);				
+				}
+			}
+
+			return words;
 		}
 
 		/// <summary>
-		/// Gets the entry for the specified word, containing the current best value and the score of that value.
+		/// Checks if the dictionary contains the specified term.
 		/// </summary>
-		/// <returns>The word entry.</returns>
-		/// <param name="word">Word.</param>
-		public ListfileDictionaryEntry GetWordEntry(string word)
+		/// <returns><c>true</c>, if the dictionary contains the term, <c>false</c> otherwise.</returns>
+		/// <param name="term">term.</param>
+		public bool ContainsTerm(string term)
 		{
-			if (this.DictionaryEntries.ContainsKey(word.ToUpperInvariant()))
+			return this.DictionaryEntries.ContainsKey(term.ToUpperInvariant());
+		}
+
+		/// <summary>
+		/// Gets the entry for the specified term, containing the current best value and the score of that value.
+		/// </summary>
+		/// <returns>The term entry.</returns>
+		/// <param name="term">term.</param>
+		public ListfileDictionaryEntry GetTermEntry(string term)
+		{
+			if (this.DictionaryEntries.ContainsKey(term.ToUpperInvariant()))
 			{
-				return DictionaryEntries[word.ToUpperInvariant()];
+				return DictionaryEntries[term.ToUpperInvariant()];
 			}
 			else
 			{
@@ -200,16 +375,16 @@ namespace liblistfile
 		}
 
 		/// <summary>
-		/// Adds an entry for the provided word if it's not already in the dictionary.
+		/// Adds an entry for the provided term if it's not already in the dictionary.
 		/// </summary>
-		/// <param name="word">Word.</param>
-		public bool AddWordEntry(string word)
+		/// <param name="term">term.</param>
+		public bool AddTermEntry(string term)
 		{
-			if (!ContainsWord(word))
+			if (!ContainsTerm(term))
 			{
-				ListfileDictionaryEntry newEntry = new ListfileDictionaryEntry(word, WordScore.Calculate(word));
+				ListfileDictionaryEntry newEntry = new ListfileDictionaryEntry(term, TermScore.Calculate(term));
 
-				this.DictionaryEntries.Add(word.ToUpperInvariant(), newEntry);
+				this.DictionaryEntries.Add(term.ToUpperInvariant(), newEntry);
 				return true;
 			}
 
@@ -217,20 +392,78 @@ namespace liblistfile
 		}
 
 		/// <summary>
-		/// Updates the dictionary entry for the provided word. If the list doesn't contain the word, it is added.
-		/// If not, the score of the word is compared with the existing one. If it has a larger score, it replaced
+		/// Updates the dictionary entry for the provided term. If the list doesn't contain the term, it is added.
+		/// If not, the score of the term is compared with the existing one. If it has a larger score, it replaced
 		/// the one in the dictionary.
 		/// </summary>
-		/// <param name="word">Word.</param>
-		public bool UpdateWordEntry(string word)
+		/// <param name="term">term.</param>
+		public bool UpdateTermEntry(string term)
 		{
-			if (!ContainsWord(word))
+			if (!ContainsTerm(term))
 			{
-				return AddWordEntry(word);
+				return AddTermEntry(term);
 			}
 			else
 			{
-				return this.DictionaryEntries[word.ToUpperInvariant()].UpdateWord(word);
+				return this.DictionaryEntries[term.ToUpperInvariant()].UpdateTerm(term);
+			}
+		}
+
+		/// <summary>
+		/// Compares the words by their length.
+		/// Code example taken from https://msdn.microsoft.com/en-us/library/w56d4y5z(v=vs.110).aspx.
+		/// </summary>
+		/// <returns>The words by length.</returns>
+		/// <param name="x">The x coordinate.</param>
+		/// <param name="y">The y coordinate.</param>
+		private static int CompareWordsByLength(string x, string y)
+		{
+			if (x == null)
+			{
+				if (y == null)
+				{
+					// If x is null and y is null, they're
+					// equal. 
+					return 0;
+				}
+				else
+				{
+					// If x is null and y is not null, y
+					// is greater. 
+					return -1;
+				}
+			}
+			else
+			{
+				// If x is not null...
+				//
+				if (y == null)
+                // ...and y is null, x is greater.
+				{
+					return 1;
+				}
+				else
+				{
+					// ...and y is not null, compare the 
+					// lengths of the two strings.
+					//
+					int retval = x.Length.CompareTo(y.Length);
+
+					if (retval != 0)
+					{
+						// If the strings are not of equal length,
+						// the longer string is greater.
+						//
+						return retval;
+					}
+					else
+					{
+						// If the strings are of equal length,
+						// sort them with ordinary string comparison.
+						//
+						return x.CompareTo(y);
+					}
+				}
 			}
 		}
 
@@ -248,14 +481,28 @@ namespace liblistfile
 					{
 						bw.Write(c);
 					}
+					bw.Write(ListfileDictionary.Version);
 
-					bw.Write((uint)1);
 					bw.Write((ulong)this.DictionaryEntries.Count);
 
-					foreach (KeyValuePair<string, ListfileDictionaryEntry> DictionaryEntry in DictionaryEntries)
+					// Compress the dictionary entries
+					byte[] compressedEntries;
+					using (MemoryStream uncompressedDictionaryStream = new MemoryStream())
 					{
-						bw.Write(DictionaryEntry.Value.GetBytes());
+						using (BinaryWriter uncompressedWriter = new BinaryWriter(uncompressedDictionaryStream))
+						{
+							foreach (KeyValuePair<string, ListfileDictionaryEntry> DictionaryEntry in DictionaryEntries)
+							{
+								uncompressedWriter.Write(DictionaryEntry.Value.GetBytes());
+							}
+						}
+
+						compressedEntries = uncompressedDictionaryStream.ToArray().Compress();
 					}
+
+					// Write the dictionary block with leading size
+					bw.Write((ulong)compressedEntries.LongLength);
+					bw.Write(compressedEntries);
 				}
 
 				return ms.ToArray();
@@ -268,23 +515,23 @@ namespace liblistfile
 	///
 	///	Each dictionary entry (when serialized) is structured as follows:
 	///
-	/// char[]					: Value (a null-terminated string of a word)
-	/// float					: Score (the score of the word)
+	/// char[]					: Value (a null-terminated string of a term)
+	/// float					: Score (the score of the term)
 	/// </summary>
 	public class ListfileDictionaryEntry
 	{
 		/// <summary>
-		/// Gets the current best word.
+		/// Gets the current best term.
 		/// </summary>
-		/// <value>The word.</value>
-		public string Word
+		/// <value>The term.</value>
+		public string Term
 		{
 			get;
 			private set;
 		}
 
 		/// <summary>
-		/// Gets the score of the current word.
+		/// Gets the score of the current term.
 		/// </summary>
 		/// <value>The score.</value>
 		public float Score
@@ -296,26 +543,26 @@ namespace liblistfile
 		/// <summary>
 		/// Initializes a new instance of the <see cref="liblistfile.ListfileDictionaryEntry"/> class.
 		/// </summary>
-		/// <param name="InWord">In value.</param>
+		/// <param name="InTerm">The input term.</param>
 		/// <param name="InScore">In score.</param>
-		public ListfileDictionaryEntry(string InWord, float InScore)
+		public ListfileDictionaryEntry(string InTerm, float InScore)
 		{
-			this.Word = InWord;
+			this.Term = InTerm;
 			this.Score = InScore;
 		}
 
 		/// <summary>
-		/// Updates the word contained in this entry if the new word has a better score than the old one.
+		/// Updates the term contained in this entry if the new term has a better score than the old one.
 		/// </summary>
-		/// <returns><c>true</c>, if the word was updated, <c>false</c> otherwise.</returns>
-		/// <param name="word">Word.</param>
-		public bool UpdateWord(string word)
+		/// <returns><c>true</c>, if the term was updated, <c>false</c> otherwise.</returns>
+		/// <param name="term">Term.</param>
+		public bool UpdateTerm(string term)
 		{
-			float newWordScore = WordScore.Calculate(word);
-			if (this.Score < newWordScore)
+			float newTermScore = TermScore.Calculate(term);
+			if (this.Score < newTermScore)
 			{
-				this.Word = word;
-				this.Score = newWordScore;
+				this.Term = term;
+				this.Score = newTermScore;
 
 				return true;
 			}
@@ -326,22 +573,22 @@ namespace liblistfile
 		}
 
 		/// <summary>
-		/// Forcibly sets the word and score.
+		/// Forcibly sets the term and score.
 		/// </summary>
-		/// <param name="word">Word.</param>
+		/// <param name="term">term.</param>
 		/// <param name="score">Score.</param>
-		public void ForceUpdateWord(string word, float score)
+		public void ForceUpdateTerm(string term, float score)
 		{
-			this.Word = word;
+			this.Term = term;
 			this.Score = score;
 		}
 
 		/// <summary>
-		/// Recalculates the score of the word.
+		/// Recalculates the score of the term.
 		/// </summary>
 		public void RecalculateScore()
 		{
-			this.Score = WordScore.Calculate(this.Word);			
+			this.Score = TermScore.Calculate(this.Term);			
 		}
 
 		/// <summary>
@@ -350,11 +597,11 @@ namespace liblistfile
 		/// <returns>The bytes.</returns>
 		public byte[] GetBytes()
 		{
-			using (MemoryStream ms = new MemoryStream(Word.Length + 1 + 4))
+			using (MemoryStream ms = new MemoryStream(Term.Length + 1 + 4))
 			{
 				using (BinaryWriter bw = new BinaryWriter(ms))
 				{
-					bw.WriteNullTerminatedString(this.Word);
+					bw.WriteNullTerminatedString(this.Term);
 					bw.Write(this.Score);
 				}
 
