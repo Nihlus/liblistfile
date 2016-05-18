@@ -19,15 +19,14 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-using System;
-using System.IO;
-using Warcraft.Core;
 using System.Collections.Generic;
-using liblistfile.Score;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Ionic.BZip2;
+using liblistfile.Score;
+using Warcraft.Core;
 
 namespace liblistfile
 {
@@ -314,7 +313,7 @@ namespace liblistfile
 				{
 					sb.Append(GetTermEntry(parts[i]).Term);
 
-					if (i < parts.Length)
+					if (i < parts.Length - 1)
 					{
 						sb.Append("\\");
 					}

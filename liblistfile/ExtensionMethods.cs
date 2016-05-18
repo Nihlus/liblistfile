@@ -19,13 +19,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-using System;
 using System.Collections.Generic;
 using System.IO;
-using Warcraft.Core;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Ionic.BZip2;
-using System.Security.Cryptography;
+using Warcraft.Core;
 
 namespace liblistfile
 {
@@ -34,6 +33,11 @@ namespace liblistfile
 	/// </summary>
 	public static class ExtensionMethods
 	{
+		/// <summary>
+		/// Computes the MD5 hash for this byte array.
+		/// </summary>
+		/// <returns>The hash.</returns>
+		/// <param name="byteArray">Byte array.</param>
 		public static byte[] ComputeHash(this byte[] byteArray)
 		{
 			using (MD5 md5 = MD5.Create())
@@ -42,6 +46,10 @@ namespace liblistfile
 			}
 		}
 
+		/// <summary>
+		/// Compresses this byte array using a BZip2 algorithm.
+		/// </summary>
+		/// <param name="uncompressedBytes">Uncompressed bytes.</param>
 		public static byte[] Compress(this byte[] uncompressedBytes)
 		{
 			byte[] compressedBytes;
@@ -65,29 +73,24 @@ namespace liblistfile
 			return compressedBytes;
 		}
 
+		/// <summary>
+		/// Compresses this string list using a BZip2 algorithm.
+		/// The strings are first stored in list order as null-terminated strings.
+		/// </summary>
+		/// <param name="inputList">Input list.</param>
 		public static byte[] Compress(this List<string> inputList)
 		{
-			byte[] compressedList;
-			if (inputList.Count > 0)
-			{
-				using (MemoryStream om = new MemoryStream())
-				{
-					using (BZip2OutputStream bo = new BZip2OutputStream(om))
-					{
-						byte[] serializedList = inputList.Serialize();
-						bo.Write(serializedList, 0, serializedList.Length);
-					}
-					compressedList = om.ToArray();
-				}
-			}
-			else
-			{
-				compressedList = new byte[0];
-			}
-
-			return compressedList;
+			return inputList.Serialize().Compress();
 		}
 
+		/// <summary>
+		/// Replaces an instance of a string with another inside this string. This replacement
+		/// is case-insensitive.
+		/// </summary>
+		/// <returns>The string with the instance replaced.</returns>
+		/// <param name="input">Input.</param>
+		/// <param name="search">Search.</param>
+		/// <param name="replacement">Replacement.</param>
 		public static string ReplaceCaseInsensitive(this string input, string search, string replacement)
 		{
 			string result = Regex.Replace(

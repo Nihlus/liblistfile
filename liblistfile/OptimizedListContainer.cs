@@ -22,10 +22,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Ionic.BZip2;
 using Warcraft.Core;
-using System.Security.Cryptography;
-using System.Linq;
 
 namespace liblistfile
 {
@@ -224,8 +223,17 @@ namespace liblistfile
 		}
 	}
 
+	/// <summary>
+	/// Equality comparator for byte arrays used in the optimized lists.
+	/// This comparator compares the arrays based on their contents, and not their references.
+	/// </summary>
 	public class ByteArrayComparer : IEqualityComparer<byte[]>
 	{
+		/// <summary>
+		/// Determines whether the two arrays are equal.
+		/// </summary>
+		/// <param name="left">Left.</param>
+		/// <param name="right">Right.</param>
 		public bool Equals(byte[] left, byte[] right)
 		{
 			if (left == null || right == null)
@@ -236,6 +244,13 @@ namespace liblistfile
 			return left.SequenceEqual(right);
 		}
 
+		/// <Docs>The object for which the hash code is to be returned.</Docs>
+		/// <para>Returns a hash code for the specified object.</para>
+		/// <returns>A hash code for the specified object.</returns>
+		/// <summary>
+		/// Gets the hash code.
+		/// </summary>
+		/// <param name="key">Key.</param>
 		public int GetHashCode(byte[] key)
 		{
 			if (key == null)
