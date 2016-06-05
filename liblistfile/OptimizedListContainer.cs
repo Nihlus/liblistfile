@@ -33,16 +33,16 @@ namespace liblistfile
 	/// 	Optimized listfile container for MPQ archives.
 	/// Contains one or more listfiles that have been optimized using a scored
 	/// dictionary.
-	/// 
+	///
 	/// The file is structured as follows:
-	/// 
+	///
 	/// char[4]						: Signature (always OLIC)
 	/// uint32_t					: Version
-	/// char[]						: ArchiveName (the name of the archive which 
+	/// char[]						: ArchiveName (the name of the archive which
 	/// 							  uses one of the lists)
 	/// uint32_t					: ListCount (number of stored optimized lists)
 	/// OptimizedList[ListCount]	: The lists contained in the file.
-	/// 
+	///
 	/// </summary>
 	public class OptimizedListContainer
 	{
@@ -94,23 +94,30 @@ namespace liblistfile
 				using (BinaryReader br = new BinaryReader(ms))
 				{
 					string dataSignature = new string(br.ReadChars(4));
-					if (dataSignature != OptimizedListContainer.Signature)
+					if (dataSignature != Signature)
 					{
 						throw new InvalidDataException("The input data did not begin with a container signature.");
 					}
 
-					uint Version = br.ReadUInt32();
+					uint StoredVersion = br.ReadUInt32();
 
 					this.PackageName = br.ReadNullTerminatedString();
 
 					uint entryCount = br.ReadUInt32();
 					for (int i = 0; i < entryCount; ++i)
 					{
-						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(PeekListBlockSize(br) + 12)));
+						string listSignature = new string(br.ReadChars(4));
+						if (listSignature != OptimizedList.Signature)
+						{
+							throw new InvalidDataException("The input data did not begin with a list signature.");
+						}
+						ulong BlockSize = br.ReadUInt64();
+
+						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(BlockSize)));
 						this.OptimizedLists.Add(optimizedList.PackageHash, optimizedList);
 					}
 
-					if (Version < OptimizedListContainer.Version)
+					if (StoredVersion < Version)
 					{
 						// Do whatever updating needs to be done
 					}
@@ -119,34 +126,11 @@ namespace liblistfile
 		}
 
 		/// <summary>
-		/// Peeks the size of the list block.
-		/// </summary>
-		/// <returns>The list block size.</returns>
-		/// <param name="br">Br.</param>
-		private ulong PeekListBlockSize(BinaryReader br)
-		{
-			long currentPosition = br.BaseStream.Position;
-
-			string dataSignature = new string(br.ReadChars(4));
-			if (dataSignature != OptimizedList.Signature)
-			{
-				throw new InvalidDataException("The input data did not begin with a list signature.");
-			}
-
-			ulong BlockSize = br.ReadUInt64();
-
-			// Return to the previous position
-			br.BaseStream.Position = currentPosition;
-
-			return BlockSize;
-		}
-
-		/// <summary>
 		/// Determines whether the specifed package hash has any lists stored in the container.
 		/// </summary>
 		/// <returns><c>true</c>, if the hash has any lists, <c>false</c> otherwise.</returns>
 		/// <param name="PackageHash">Package hash.</param>
-		public bool ContainsPackageList(byte[] PackageHash)
+		public bool ContainsPackageListfile(byte[] PackageHash)
 		{
 			return this.OptimizedLists.ContainsKey(PackageHash);
 		}
@@ -158,7 +142,7 @@ namespace liblistfile
 		/// <param name="List">Optimized list.</param>
 		public bool IsListSameAsStored(OptimizedList List)
 		{
-			if (ContainsPackageList(List.PackageHash))
+			if (ContainsPackageListfile(List.PackageHash))
 			{
 				OptimizedList optimizedList = this.OptimizedLists[List.PackageHash];
 				return optimizedList.ListHash.Equals(List.ListHash);
@@ -170,7 +154,7 @@ namespace liblistfile
 		}
 
 		/// <summary>
-		/// Adds the optimized list to the container. If the list is already in the container, 
+		/// Adds the optimized list to the container. If the list is already in the container,
 		/// it is not added.
 		/// </summary>
 		/// <param name="List">List.</param>
@@ -204,13 +188,13 @@ namespace liblistfile
 			{
 				using (BinaryWriter bw = new BinaryWriter(ms))
 				{
-					foreach (char c in OptimizedListContainer.Signature)
+					foreach (char c in Signature)
 					{
 						bw.Write(c);
 					}
-					bw.Write(OptimizedListContainer.Version);
+					bw.Write(Version);
 					bw.WriteNullTerminatedString(this.PackageName);
-					bw.Write(this.OptimizedLists.Count);
+					bw.Write((uint)this.OptimizedLists.Count);
 
 					foreach (KeyValuePair<byte[], OptimizedList> ListPair in this.OptimizedLists)
 					{
@@ -227,7 +211,7 @@ namespace liblistfile
 	/// Equality comparator for byte arrays used in the optimized lists.
 	/// This comparator compares the arrays based on their contents, and not their references.
 	/// </summary>
-	public class ByteArrayComparer : IEqualityComparer<byte[]>
+	internal class ByteArrayComparer : IEqualityComparer<byte[]>
 	{
 		/// <summary>
 		/// Determines whether the two arrays are equal.
@@ -255,8 +239,8 @@ namespace liblistfile
 		{
 			if (key == null)
 			{
-				throw new ArgumentNullException("key");
-			
+				throw new ArgumentNullException(nameof(key), "The byte may noy be null.");
+
 			}
 
 			return key.Sum(b => b);
@@ -266,7 +250,7 @@ namespace liblistfile
 	/// <summary>
 	/// An optimized list of file paths.
 	/// Each OptimizedList entry (when serialized) is structured as follows:
-	/// 
+	///
 	/// char[4]						: Signature (always LIST)
 	/// uint64_t					: BlockSize (byte count, always CompressedData + 64)
 	/// int128_t					: PackageHash (MD5 hash of the package the list works for.) 16 bytes.
@@ -322,19 +306,12 @@ namespace liblistfile
 			{
 				using (BinaryReader br = new BinaryReader(ms))
 				{
-					string dataSignature = new string(br.ReadChars(4));
-					if (dataSignature != OptimizedList.Signature)
-					{
-						throw new InvalidDataException("The input data did not begin with a list signature.");
-					}
-
-					ulong BlockSize = br.ReadUInt64();
-
 					// Read the MD5 archive signature.
 					this.PackageHash = br.ReadBytes(this.PackageHash.Length);
 					this.ListHash = br.ReadBytes(this.ListHash.Length);
 
-					int compressedDataSize = (int)((long)(BlockSize - sizeof(ulong)) - (this.PackageHash.LongLength + this.ListHash.LongLength));
+					long hashesSize = (this.PackageHash.LongLength + this.ListHash.LongLength);
+					int compressedDataSize = (int)(data.LongLength - hashesSize);
 					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes(compressedDataSize)))
 					{
 						using (BZip2InputStream bz = new BZip2InputStream(compressedData))
@@ -352,7 +329,7 @@ namespace liblistfile
 									{
 										this.OptimizedPaths.Add(listReader.ReadNullTerminatedString());
 									}
-								}								
+								}
 							}
 						}
 					}
@@ -370,14 +347,14 @@ namespace liblistfile
 			{
 				using (BinaryWriter bw = new BinaryWriter(ms))
 				{
-					foreach (char c in OptimizedList.Signature)
+					foreach (char c in Signature)
 					{
 						bw.Write(c);
 					}
 
 					byte[] compressedList = this.OptimizedPaths.Compress();
 
-					ulong blockSize = sizeof(ulong) + (ulong)this.PackageHash.LongLength + (ulong)this.ListHash.LongLength + (ulong)compressedList.LongLength;
+					ulong blockSize = (ulong)this.PackageHash.LongLength + (ulong)this.ListHash.LongLength + (ulong)compressedList.LongLength;
 					bw.Write(blockSize);
 
 					bw.Write(this.PackageHash);

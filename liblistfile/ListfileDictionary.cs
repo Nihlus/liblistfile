@@ -27,6 +27,7 @@ using System.Text.RegularExpressions;
 using Ionic.BZip2;
 using liblistfile.Score;
 using Warcraft.Core;
+using System;
 
 namespace liblistfile
 {
@@ -223,7 +224,7 @@ namespace liblistfile
 		/// <param name="bSortDictionary">Whether or not the dictionary should be sorted after words have been added.</param>
 		public void AddNewTermWords(string term, bool bSortDictionary = true)
 		{
-			foreach (string word in GetWordsFromTerm(term))
+			foreach (string word in GetWordsFromTerm(Path.GetFileNameWithoutExtension(term)))
 			{
 				if (!this.DictionaryWords.Contains(word))
 				{
@@ -311,7 +312,13 @@ namespace liblistfile
 				string[] parts = path.Split('\\');
 				for (int i = 0; i < parts.Length; ++i)
 				{
-					sb.Append(GetTermEntry(parts[i]).Term);
+					string extension = Path.GetExtension(parts[i]).ToLowerInvariant();
+					sb.Append(GetTermEntry(Path.GetFileNameWithoutExtension(parts[i])).Term);
+
+					if (!String.IsNullOrEmpty(extension))
+					{
+						sb.Append(extension);
+					}
 
 					if (i < parts.Length - 1)
 					{
@@ -332,7 +339,7 @@ namespace liblistfile
 		/// <param name="term">Term.</param>
 		public static List<string> GetWordsFromTerm(string term)
 		{
-			MatchCollection matches = Regex.Matches(term, "([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)");
+			MatchCollection matches = Regex.Matches(Path.GetFileNameWithoutExtension(term), "([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)");
 
 			List<string> words = new List<string>();
 			foreach (Match match in matches)
@@ -350,10 +357,10 @@ namespace liblistfile
 		/// Checks if the dictionary contains the specified term.
 		/// </summary>
 		/// <returns><c>true</c>, if the dictionary contains the term, <c>false</c> otherwise.</returns>
-		/// <param name="term">term.</param>
-		public bool ContainsTerm(string term)
+		/// <param name="cleanTerm">term.</param>
+		private bool ContainsTerm(string cleanTerm)
 		{
-			return this.DictionaryEntries.ContainsKey(term.ToUpperInvariant());
+			return this.DictionaryEntries.ContainsKey(cleanTerm.ToUpperInvariant());
 		}
 
 		/// <summary>
@@ -363,9 +370,9 @@ namespace liblistfile
 		/// <param name="term">term.</param>
 		public ListfileDictionaryEntry GetTermEntry(string term)
 		{
-			if (this.DictionaryEntries.ContainsKey(term.ToUpperInvariant()))
+			if (this.DictionaryEntries.ContainsKey(Path.GetFileNameWithoutExtension(term).ToUpperInvariant()))
 			{
-				return DictionaryEntries[term.ToUpperInvariant()];
+				return DictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
 			}
 			else
 			{
@@ -379,11 +386,12 @@ namespace liblistfile
 		/// <param name="term">term.</param>
 		public bool AddTermEntry(string term)
 		{
-			if (!ContainsTerm(term))
+			string cleanTerm = Path.GetFileNameWithoutExtension(term);
+			if (!ContainsTerm(cleanTerm))
 			{
-				ListfileDictionaryEntry newEntry = new ListfileDictionaryEntry(term, TermScore.Calculate(term));
+				ListfileDictionaryEntry newEntry = new ListfileDictionaryEntry(cleanTerm, TermScore.Calculate(cleanTerm));
 
-				this.DictionaryEntries.Add(term.ToUpperInvariant(), newEntry);
+				this.DictionaryEntries.Add(cleanTerm.ToUpperInvariant(), newEntry);
 				return true;
 			}
 
@@ -398,13 +406,14 @@ namespace liblistfile
 		/// <param name="term">term.</param>
 		public bool UpdateTermEntry(string term)
 		{
-			if (!ContainsTerm(term))
+			string cleanTerm = Path.GetFileNameWithoutExtension(term);
+			if (!ContainsTerm(cleanTerm))
 			{
-				return AddTermEntry(term);
+				return AddTermEntry(cleanTerm);
 			}
 			else
 			{
-				return this.DictionaryEntries[term.ToUpperInvariant()].UpdateTerm(term);
+				return this.DictionaryEntries[cleanTerm.ToUpperInvariant()].UpdateTerm(cleanTerm);
 			}
 		}
 

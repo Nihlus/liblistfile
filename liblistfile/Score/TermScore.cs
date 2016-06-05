@@ -167,7 +167,7 @@ namespace liblistfile.Score
 				}
 
 
-				if (i < transientWord.Length && Char.IsDigit(previousChar))
+				if (i + 1 < transientWord.Length && Char.IsDigit(previousChar))
 				{
 					char nextChar = transientWord[i + 1];
 					if (Char.IsDigit(nextChar))
