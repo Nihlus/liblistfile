@@ -32,11 +32,11 @@ using System;
 namespace liblistfile
 {
 	/// <summary>
-	/// Dictionary file for listtool. Contains a dictionary of terms used in 
+	/// Dictionary file for listtool. Contains a dictionary of terms used in
 	/// listfiles, and their calculated term scores.
-	/// 
+	///
 	/// The file (when serialized) is structured as follows:
-	/// 
+	///
 	/// char[4]							: Signature (always DICT)
 	/// uint32							: Version
 	/// uint64_t						: RecordCount
@@ -90,7 +90,7 @@ namespace liblistfile
 		/// Key: An all-uppercase term.
 		/// Value: A dictionary entry containing the best found format for the term, along with a score.
 		/// </summary>
-		private readonly Dictionary<string, ListfileDictionaryEntry> DictionaryEntries = 
+		private readonly Dictionary<string, ListfileDictionaryEntry> DictionaryEntries =
 			new Dictionary<string, ListfileDictionaryEntry>();
 
 
@@ -234,7 +234,7 @@ namespace liblistfile
 
 			if (bSortDictionary)
 			{
-				this.DictionaryWords.Sort(CompareWordsByLength);			
+				this.DictionaryWords.Sort(CompareWordsByLength);
 			}
 		}
 
@@ -346,7 +346,7 @@ namespace liblistfile
 			{
 				if (!words.Contains(match.Value))
 				{
-					words.Add(match.Value);				
+					words.Add(match.Value);
 				}
 			}
 
@@ -370,6 +370,11 @@ namespace liblistfile
 		/// <param name="term">term.</param>
 		public ListfileDictionaryEntry GetTermEntry(string term)
 		{
+			if (term == null)
+			{
+				return null;
+			}
+
 			if (this.DictionaryEntries.ContainsKey(Path.GetFileNameWithoutExtension(term).ToUpperInvariant()))
 			{
 				return DictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
@@ -386,6 +391,11 @@ namespace liblistfile
 		/// <param name="term">term.</param>
 		public bool AddTermEntry(string term)
 		{
+			if (term == null)
+			{
+				return false;
+			}
+
 			string cleanTerm = Path.GetFileNameWithoutExtension(term);
 			if (!ContainsTerm(cleanTerm))
 			{
@@ -406,6 +416,11 @@ namespace liblistfile
 		/// <param name="term">term.</param>
 		public bool UpdateTermEntry(string term)
 		{
+			if (term == null)
+			{
+				return false;
+			}
+
 			string cleanTerm = Path.GetFileNameWithoutExtension(term);
 			if (!ContainsTerm(cleanTerm))
 			{
@@ -431,13 +446,13 @@ namespace liblistfile
 				if (y == null)
 				{
 					// If x is null and y is null, they're
-					// equal. 
+					// equal.
 					return 0;
 				}
 				else
 				{
 					// If x is null and y is not null, y
-					// is greater. 
+					// is greater.
 					return -1;
 				}
 			}
@@ -452,7 +467,7 @@ namespace liblistfile
 				}
 				else
 				{
-					// ...and y is not null, compare the 
+					// ...and y is not null, compare the
 					// lengths of the two strings.
 					//
 					int retval = x.Length.CompareTo(y.Length);
@@ -469,7 +484,7 @@ namespace liblistfile
 						// If the strings are of equal length,
 						// sort them with ordinary string comparison.
 						//
-						return x.CompareTo(y);
+						return String.Compare(x, y, StringComparison.Ordinal);
 					}
 				}
 			}
@@ -544,7 +559,7 @@ namespace liblistfile
 		/// <value>The score.</value>
 		public float Score
 		{
-			get; 
+			get;
 			private set;
 		}
 
@@ -596,7 +611,7 @@ namespace liblistfile
 		/// </summary>
 		public void RecalculateScore()
 		{
-			this.Score = TermScore.Calculate(this.Term);			
+			this.Score = TermScore.Calculate(this.Term);
 		}
 
 		/// <summary>
