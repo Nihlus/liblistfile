@@ -28,10 +28,10 @@ using System.Reflection;
 [assembly: AssemblyDescription("Library for generating and optimizing listfiles.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("")]
+[assembly: AssemblyProduct("liblistfile")]
 [assembly: AssemblyCopyright("Jarl Gullberg 2016 <jarl.gullberg@gmail.com>")]
 [assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("en-GB")]
+[assembly: AssemblyCulture("")]
 
 // The assembly version has the format "{Major}.{Minor}.{Build}.{Revision}".
 // The form "{Major}.{Minor}.*" will automatically update the build and revision,
