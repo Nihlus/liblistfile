@@ -5,6 +5,12 @@
       <sourceFolder url="file://$MODULE_DIR$/../../liblistfile" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/../../liblistfile/bin" />
       <excludeFolder url="file://$MODULE_DIR$/../../liblistfile/obj" />
+      <excludeFolder url="file://$MODULE_DIR$/../../packages" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../../libwarcraft/libwarcraft">
+      <sourceFolder url="file://$MODULE_DIR$/../../../libwarcraft/libwarcraft" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../libwarcraft/libwarcraft/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../libwarcraft/libwarcraft/obj" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
