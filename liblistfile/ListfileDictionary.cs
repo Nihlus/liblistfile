@@ -410,7 +410,7 @@ namespace liblistfile
 
 		/// <summary>
 		/// Updates the dictionary entry for the provided term. If the list doesn't contain the term, it is added.
-		/// If not, the score of the term is compared with the existing one. If it has a larger score, it replaced
+		/// If not, the score of the term is compared with the existing one. If it has a larger score, it replaces
 		/// the one in the dictionary.
 		/// </summary>
 		/// <param name="term">term.</param>
@@ -429,6 +429,40 @@ namespace liblistfile
 			else
 			{
 				return this.DictionaryEntries[cleanTerm.ToUpperInvariant()].UpdateTerm(cleanTerm);
+			}
+		}
+
+		/// <summary>
+		/// Forcibly sets the score of the provided term.
+		/// </summary>
+		/// <param name="term">term.</param>
+		/// <param name="score">Score.</param>
+		public bool SetTermScore(string term, float score)
+		{
+			if (term == null)
+			{
+				return false;
+			}
+
+			string cleanTerm = Path.GetFileNameWithoutExtension(term);
+			if (!ContainsTerm(cleanTerm))
+			{
+				bool success = AddTermEntry(cleanTerm);
+				if (success)
+				{
+					this.DictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
+				}
+				return success;
+			}
+			else
+			{
+				if (score != this.DictionaryEntries[cleanTerm.ToUpperInvariant()].Score)
+				{
+					this.DictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
+					return true;
+				}
+
+				return false;
 			}
 		}
 
@@ -596,13 +630,20 @@ namespace liblistfile
 		}
 
 		/// <summary>
-		/// Forcibly sets the term and score.
+		/// Forcibly sets the term.
 		/// </summary>
-		/// <param name="term">term.</param>
-		/// <param name="score">Score.</param>
-		public void ForceUpdateTerm(string term, float score)
+		/// <param name="term"></param>
+		public void SetTerm(string term)
 		{
 			this.Term = term;
+		}
+
+		/// <summary>
+		/// Forcibly sets the score of the term.
+		/// </summary>
+		/// <param name="score"></param>
+		public void SetScore(float score)
+		{
 			this.Score = score;
 		}
 
