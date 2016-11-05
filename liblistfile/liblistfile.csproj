@@ -64,6 +64,10 @@
       <Project>{DA06A44E-A67B-46C7-B07D-E90AEBED0502}</Project>
       <Name>libwarcraft</Name>
     </ProjectReference>
+    <ProjectReference Include="..\lib\libwarcraft\libwarcraft\libwarcraft.csproj">
+      <Project>{DA06A44E-A67B-46C7-B07D-E90AEBED0502}</Project>
+      <Name>libwarcraft</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
