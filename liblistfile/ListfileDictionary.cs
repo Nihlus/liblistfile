@@ -102,7 +102,7 @@ namespace liblistfile
 		{
 			get
 			{
-				return DictionaryEntries.Where(pair => pair.Value.Score <= EntryLowScoreTolerance);
+				return this.DictionaryEntries.Where(pair => pair.Value.Score <= EntryLowScoreTolerance);
 			}
 		}
 
@@ -114,7 +114,7 @@ namespace liblistfile
 		{
 			get
 			{
-				return DictionaryEntries.Where(pair => pair.Value.Score >= EntryHighScoreTolerance);
+				return this.DictionaryEntries.Where(pair => pair.Value.Score >= EntryHighScoreTolerance);
 			}
 		}
 
@@ -146,19 +146,19 @@ namespace liblistfile
 				using (BinaryReader br = new BinaryReader(ms))
 				{
 					string dataSignature = new string(br.ReadChars(4));
-					if (dataSignature != ListfileDictionary.Signature)
+					if (dataSignature != Signature)
 					{
 						throw new InvalidDataException("The input data did not begin with a dictionary signature.");
 					}
-					uint Version = br.ReadUInt32();
+					uint dataVersion = br.ReadUInt32();
 
-					if (Version < ListfileDictionary.Version)
+					if (dataVersion < Version)
 					{
-						if (Version < 2)
+						if (dataVersion < 2)
 						{
 							// Version 2 started compressing the dictionary block
-							ulong RecordCount = br.ReadUInt64();
-							for (ulong i = 0; i < RecordCount; ++i)
+							ulong recordCount = br.ReadUInt64();
+							for (ulong i = 0; i < recordCount; ++i)
 							{
 								ListfileDictionaryEntry entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
 								this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
@@ -166,7 +166,7 @@ namespace liblistfile
 						}
 
 						// Perform any extra actions required
-						if (Version == 0)
+						if (dataVersion == 0)
 						{
 							// From version 0 and up, the score calculation was altered. Recalculate all scores.
 							foreach (KeyValuePair<string, ListfileDictionaryEntry> entry in this.DictionaryEntries)
@@ -179,10 +179,10 @@ namespace liblistfile
 					{
 						// The most current implementation
 
-						ulong RecordCount = br.ReadUInt64();
-						ulong RecordBlockSize = br.ReadUInt64();
+						ulong recordCount = br.ReadUInt64();
+						ulong recordBlockSize = br.ReadUInt64();
 
-						using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)RecordBlockSize)))
+						using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
 						{
 							using (BZip2InputStream bz = new BZip2InputStream(compressedData))
 							{
@@ -195,7 +195,7 @@ namespace liblistfile
 									decompressedData.Position = 0;
 									using (BinaryReader zr = new BinaryReader(decompressedData))
 									{
-										for (ulong i = 0; i < RecordCount; ++i)
+										for (ulong i = 0; i < recordCount; ++i)
 										{
 											ListfileDictionaryEntry entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
 											this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
@@ -207,9 +207,9 @@ namespace liblistfile
 					}
 
 					// Extract all good words from high-scoring terms
-					foreach (KeyValuePair<string, ListfileDictionaryEntry> DictionaryEntry in this.HighScoreEntries)
+					foreach (KeyValuePair<string, ListfileDictionaryEntry> highScoreEntryPair in this.HighScoreEntries)
 					{
-						AddNewTermWords(DictionaryEntry.Value.Term, false);
+						AddNewTermWords(highScoreEntryPair.Value.Term, false);
 					}
 
 					this.DictionaryWords.Sort(CompareWordsByLength);
@@ -244,6 +244,11 @@ namespace liblistfile
 		/// <param name="term">Term.</param>
 		public string Guess(string term)
 		{
+			if (string.IsNullOrEmpty(term))
+			{
+				return string.Empty;
+			}
+
 			string transientTerm = Path.GetFileNameWithoutExtension(term);
 			string extension = Path.GetExtension(term);
 
@@ -307,6 +312,11 @@ namespace liblistfile
 			List<string> optimizedList = new List<string>();
 			foreach (string path in unoptimizedList)
 			{
+				if (string.IsNullOrEmpty(path))
+				{
+					continue;
+				}
+
 				StringBuilder sb = new StringBuilder();
 
 				string[] parts = path.Split('\\');
@@ -339,9 +349,15 @@ namespace liblistfile
 		/// <param name="term">Term.</param>
 		public static List<string> GetWordsFromTerm(string term)
 		{
+			List<string> words = new List<string>();
+
+			if (string.IsNullOrEmpty(term))
+			{
+				return words;
+			}
+
 			MatchCollection matches = Regex.Matches(Path.GetFileNameWithoutExtension(term), "([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)");
 
-			List<string> words = new List<string>();
 			foreach (Match match in matches)
 			{
 				if (!words.Contains(match.Value))
@@ -377,7 +393,7 @@ namespace liblistfile
 
 			if (this.DictionaryEntries.ContainsKey(Path.GetFileNameWithoutExtension(term).ToUpperInvariant()))
 			{
-				return DictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
+				return this.DictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
 			}
 			else
 			{
@@ -454,16 +470,14 @@ namespace liblistfile
 				}
 				return success;
 			}
-			else
-			{
-				if (score != this.DictionaryEntries[cleanTerm.ToUpperInvariant()].Score)
-				{
-					this.DictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
-					return true;
-				}
 
-				return false;
+			if (score != this.DictionaryEntries[cleanTerm.ToUpperInvariant()].Score)
+			{
+				this.DictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
+				return true;
 			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -534,11 +548,11 @@ namespace liblistfile
 			{
 				using (BinaryWriter bw = new BinaryWriter(ms))
 				{
-					foreach (char c in ListfileDictionary.Signature)
+					foreach (char c in Signature)
 					{
 						bw.Write(c);
 					}
-					bw.Write(ListfileDictionary.Version);
+					bw.Write(Version);
 
 					bw.Write((ulong)this.DictionaryEntries.Count);
 
@@ -548,9 +562,9 @@ namespace liblistfile
 					{
 						using (BinaryWriter uncompressedWriter = new BinaryWriter(uncompressedDictionaryStream))
 						{
-							foreach (KeyValuePair<string, ListfileDictionaryEntry> DictionaryEntry in DictionaryEntries)
+							foreach (KeyValuePair<string, ListfileDictionaryEntry> dictionaryEntryPair in this.DictionaryEntries)
 							{
-								uncompressedWriter.Write(DictionaryEntry.Value.GetBytes());
+								uncompressedWriter.Write(dictionaryEntryPair.Value.GetBytes());
 							}
 						}
 
@@ -600,12 +614,12 @@ namespace liblistfile
 		/// <summary>
 		/// Initializes a new instance of the <see cref="liblistfile.ListfileDictionaryEntry"/> class.
 		/// </summary>
-		/// <param name="InTerm">The input term.</param>
-		/// <param name="InScore">In score.</param>
-		public ListfileDictionaryEntry(string InTerm, float InScore)
+		/// <param name="inTerm">The input term.</param>
+		/// <param name="inScore">In score.</param>
+		public ListfileDictionaryEntry(string inTerm, float inScore)
 		{
-			this.Term = InTerm;
-			this.Score = InScore;
+			this.Term = inTerm;
+			this.Score = inScore;
 		}
 
 		/// <summary>
@@ -661,7 +675,7 @@ namespace liblistfile
 		/// <returns>The bytes.</returns>
 		public byte[] GetBytes()
 		{
-			using (MemoryStream ms = new MemoryStream(Term.Length + 1 + 4))
+			using (MemoryStream ms = new MemoryStream(this.Term.Length + 1 + 4))
 			{
 				using (BinaryWriter bw = new BinaryWriter(ms))
 				{

@@ -19,7 +19,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-using System;
 using System.Text;
 
 namespace liblistfile.Score
@@ -29,17 +28,17 @@ namespace liblistfile.Score
 	/// This class calculates the PascalCase score of the provided term. A higher score indicates better compliance
 	/// with the PascalCase definition.
 	///
-	/// In general, the more mixed a word is, the better the score. All-caps words get the lowest score (a 0), 
+	/// In general, the more mixed a word is, the better the score. All-caps words get the lowest score (a 0),
 	/// and those with mixed case that begin with a single upper-case letter get the best scores.
 	///
-	/// Overall, the score is merely an indication and doesn't reliably detect propre PascalCase, 
+	/// Overall, the score is merely an indication and doesn't reliably detect propre PascalCase,
 	/// since it doesn't know anything about actual words. However, it's good enough for most purposes.
 	/// </summary>
 	public static class TermScore
 	{
 		/// <summary>
 		/// Calculates the PascalCase score of the provided word.
-		/// If the calculation is set to be strict, all-lower case words are given the same score as 
+		/// If the calculation is set to be strict, all-lower case words are given the same score as
 		/// all-upper case words. If not, all lower-case words are considered slightly better than all
 		/// uppers.
 		/// </summary>
@@ -48,12 +47,12 @@ namespace liblistfile.Score
 		public static float Calculate(string word, bool strict = false)
 		{
 			float score = 0.0f;
-			
+
 			if (word.IsAllUpper())
 			{
 				score = 0.0f;
 			}
-			
+
 			if (word.IsAllLower())
 			{
 				score = strict ? 0.0f : 0.5f;
@@ -68,12 +67,12 @@ namespace liblistfile.Score
 				}
 
 				score += 1.0f;
-				
+
 				if (word.HasMoreThanOneVersal())
 				{
 					score += 1.0f;
 				}
-				
+
 				if (word.StartsWithSingleUpper())
 				{
 					score += 1.0f;
@@ -94,8 +93,10 @@ namespace liblistfile.Score
 			transientWord = transientWord.ToLowerInvariant();
 
 			// Set the first character to be uppercase
-			StringBuilder wordBuilder = new StringBuilder(transientWord);
-			wordBuilder[0] = Char.ToUpper(transientWord[0]);
+			StringBuilder wordBuilder = new StringBuilder(transientWord)
+			{
+				[0] = char.ToUpper(transientWord[0])
+			};
 
 			char previousChar = (char)0;
 			for (int i = 0; i < transientWord.Length; ++i)
@@ -105,43 +106,43 @@ namespace liblistfile.Score
 				// Any char following a _ is upper
 				if (previousChar == '_')
 				{
-					if (Char.IsLetter(currentChar))
+					if (char.IsLetter(currentChar))
 					{
-						wordBuilder[i] = Char.ToUpper(currentChar);
+						wordBuilder[i] = char.ToUpper(currentChar);
 					}
 
 					if (i < transientWord.Length - 2)
 					{
 						if (transientWord[i + 2] == '_')
 						{
-							if (Char.IsLetter(transientWord[i + 1]))
+							if (char.IsLetter(transientWord[i + 1]))
 							{
-								wordBuilder[i + 1] = Char.ToUpper(transientWord[i + 1]);
+								wordBuilder[i + 1] = char.ToUpper(transientWord[i + 1]);
 							}
 						}
 					}
 				}
 
 				// Any char following a digit is upper
-				if (Char.IsDigit(currentChar) && (i + 1) < transientWord.Length)
+				if (char.IsDigit(currentChar) && (i + 1) < transientWord.Length)
 				{
-					wordBuilder[i + 1] = Char.ToUpper(transientWord[i + 1]);
+					wordBuilder[i + 1] = char.ToUpper(transientWord[i + 1]);
 				}
 
 				// Any set of three chars or less between a string boundary or a _ is upper
 				if (currentChar == '_')
 				{
-					bool IsThreeOrLessBetween = false;
+					bool isThreeOrLessBetween = false;
 					for (int j = 4; j > 0; --j)
 					{
 						if ((i - j) < 0 || transientWord[i - j] == '_')
 						{
-							IsThreeOrLessBetween = true;
+							isThreeOrLessBetween = true;
 							break;
 						}
 					}
 
-					if (IsThreeOrLessBetween)
+					if (isThreeOrLessBetween)
 					{
 						int j = 1;
 						while (i - j >= 0 && j <= 3)
@@ -160,19 +161,19 @@ namespace liblistfile.Score
 				// Any char following a - is upper
 				if (previousChar == '-')
 				{
-					if (Char.IsLetter(currentChar))
+					if (char.IsLetter(currentChar))
 					{
-						wordBuilder[i] = Char.ToUpper(currentChar);
+						wordBuilder[i] = char.ToUpper(currentChar);
 					}
 				}
 
 
-				if (i + 1 < transientWord.Length && Char.IsDigit(previousChar))
+				if (i + 1 < transientWord.Length && char.IsDigit(previousChar))
 				{
 					char nextChar = transientWord[i + 1];
-					if (Char.IsDigit(nextChar))
+					if (char.IsDigit(nextChar))
 					{
-						wordBuilder[i] = Char.ToLower(currentChar);
+						wordBuilder[i] = char.ToLower(currentChar);
 					}
 				}
 
@@ -199,11 +200,11 @@ namespace liblistfile.Score
 		{
 			foreach (char c in str)
 			{
-				if (Char.IsLower(c))
+				if (char.IsLower(c))
 				{
-					return false;		
+					return false;
 				}
-			}			
+			}
 			return true;
 		}
 
@@ -216,11 +217,11 @@ namespace liblistfile.Score
 		{
 			foreach (char c in str)
 			{
-				if (Char.IsUpper(c))
+				if (char.IsUpper(c))
 				{
-					return false;		
+					return false;
 				}
-			}		
+			}
 			return true;
 		}
 
@@ -272,17 +273,17 @@ namespace liblistfile.Score
 			int versalCount = 0;
 			foreach (char c in str)
 			{
-				if (Char.IsUpper(c))
+				if (char.IsUpper(c))
 				{
-					++versalCount;	
+					++versalCount;
 				}
-			
+
 				if (versalCount > 1)
 				{
-					return true;	
+					return true;
 				}
 			}
-			return false;		
+			return false;
 		}
 
 		/// <summary>
@@ -296,13 +297,13 @@ namespace liblistfile.Score
 			{
 				if (str.Length > 1)
 				{
-					return Char.IsUpper(str[0]) && !Char.IsUpper(str[1]);
+					return char.IsUpper(str[0]) && !char.IsUpper(str[1]);
 				}
 				else
 				{
-					return Char.IsUpper(str[0]);
+					return char.IsUpper(str[0]);
 				}
-			}		
+			}
 			return false;
 		}
 	}

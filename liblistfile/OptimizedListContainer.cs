@@ -76,10 +76,10 @@ namespace liblistfile
 		/// Initializes a new instance of the <see cref="liblistfile.OptimizedListContainer"/> class.
 		/// This constructor creates a new, empty list container.
 		/// </summary>
-		/// <param name="InArchiveName">In archive name.</param>
-		public OptimizedListContainer(string InArchiveName)
+		/// <param name="inArchiveName">In archive name.</param>
+		public OptimizedListContainer(string inArchiveName)
 		{
-			this.PackageName = InArchiveName;
+			this.PackageName = inArchiveName;
 		}
 
 		/// <summary>
@@ -99,7 +99,7 @@ namespace liblistfile
 						throw new InvalidDataException("The input data did not begin with a container signature.");
 					}
 
-					uint StoredVersion = br.ReadUInt32();
+					uint storedVersion = br.ReadUInt32();
 
 					this.PackageName = br.ReadNullTerminatedString();
 
@@ -111,13 +111,13 @@ namespace liblistfile
 						{
 							throw new InvalidDataException("The input data did not begin with a list signature.");
 						}
-						ulong BlockSize = br.ReadUInt64();
+						ulong blockSize = br.ReadUInt64();
 
-						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(BlockSize)));
+						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(blockSize)));
 						this.OptimizedLists.Add(optimizedList.PackageHash, optimizedList);
 					}
 
-					if (StoredVersion < Version)
+					if (storedVersion < Version)
 					{
 						// Do whatever updating needs to be done
 					}
@@ -129,23 +129,23 @@ namespace liblistfile
 		/// Determines whether the specifed package hash has any lists stored in the container.
 		/// </summary>
 		/// <returns><c>true</c>, if the hash has any lists, <c>false</c> otherwise.</returns>
-		/// <param name="PackageHash">Package hash.</param>
-		public bool ContainsPackageListfile(byte[] PackageHash)
+		/// <param name="packageHash">Package hash.</param>
+		public bool ContainsPackageListfile(byte[] packageHash)
 		{
-			return this.OptimizedLists.ContainsKey(PackageHash);
+			return this.OptimizedLists.ContainsKey(packageHash);
 		}
 
 		/// <summary>
 		/// Determines whether the specifed list is the same as the one which is stored in the container.
 		/// </summary>
 		/// <returns><c>true</c> if the specifed list is the same as the one which is stored in the container; otherwise, <c>false</c>.</returns>
-		/// <param name="List">Optimized list.</param>
-		public bool IsListSameAsStored(OptimizedList List)
+		/// <param name="inOptimizedList">Optimized list.</param>
+		public bool IsListSameAsStored(OptimizedList inOptimizedList)
 		{
-			if (ContainsPackageListfile(List.PackageHash))
+			if (ContainsPackageListfile(inOptimizedList.PackageHash))
 			{
-				OptimizedList optimizedList = this.OptimizedLists[List.PackageHash];
-				return optimizedList.ListHash.Equals(List.ListHash);
+				OptimizedList optimizedList = this.OptimizedLists[inOptimizedList.PackageHash];
+				return optimizedList.ListHash.Equals(inOptimizedList.ListHash);
 			}
 			else
 			{
@@ -157,24 +157,24 @@ namespace liblistfile
 		/// Adds the optimized list to the container. If the list is already in the container,
 		/// it is not added.
 		/// </summary>
-		/// <param name="List">List.</param>
-		public void AddOptimizedList(OptimizedList List)
+		/// <param name="inOptimizedList">List.</param>
+		public void AddOptimizedList(OptimizedList inOptimizedList)
 		{
-			if (!this.OptimizedLists.ContainsKey(List.PackageHash))
+			if (!this.OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
 			{
-				this.OptimizedLists.Add(List.PackageHash, List);
+				this.OptimizedLists.Add(inOptimizedList.PackageHash, inOptimizedList);
 			}
 		}
 
 		/// <summary>
 		/// Replaces the optimized list stored in the container (under the same package hash) with the provided list.
 		/// </summary>
-		/// <param name="List">List.</param>
-		public void ReplaceOptimizedList(OptimizedList List)
+		/// <param name="inOptimizedList">List.</param>
+		public void ReplaceOptimizedList(OptimizedList inOptimizedList)
 		{
-			if (this.OptimizedLists.ContainsKey(List.PackageHash))
+			if (this.OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
 			{
-				this.OptimizedLists[List.PackageHash] = List;
+				this.OptimizedLists[inOptimizedList.PackageHash] = inOptimizedList;
 			}
 		}
 
@@ -196,9 +196,9 @@ namespace liblistfile
 					bw.WriteNullTerminatedString(this.PackageName);
 					bw.Write((uint)this.OptimizedLists.Count);
 
-					foreach (KeyValuePair<byte[], OptimizedList> ListPair in this.OptimizedLists)
+					foreach (KeyValuePair<byte[], OptimizedList> listPair in this.OptimizedLists)
 					{
-						bw.Write(ListPair.Value.GetBytes());
+						bw.Write(listPair.Value.GetBytes());
 					}
 				}
 
@@ -285,12 +285,12 @@ namespace liblistfile
 		/// Initializes a new instance of the <see cref="liblistfile.OptimizedList"/> class.
 		/// This constructor creates a new, empty OptimizedList.
 		/// </summary>
-		/// <param name="InPackageHash">In archive signature.</param>
-		/// <param name="InOptimizedPaths">In optimized paths.</param>
-		public OptimizedList(byte[] InPackageHash, List<string> InOptimizedPaths)
+		/// <param name="inPackageHash">In archive signature.</param>
+		/// <param name="inOptimizedPaths">In optimized paths.</param>
+		public OptimizedList(byte[] inPackageHash, List<string> inOptimizedPaths)
 		{
-			this.PackageHash = InPackageHash;
-			this.OptimizedPaths = InOptimizedPaths;
+			this.PackageHash = inPackageHash;
+			this.OptimizedPaths = inOptimizedPaths;
 
 			this.ListHash = this.OptimizedPaths.Compress().ComputeHash();
 		}
@@ -397,6 +397,11 @@ namespace liblistfile
 		/// <see cref="liblistfile.OptimizedList"/>; otherwise, <c>false</c>.</returns>
 		public bool Equals(OptimizedList other)
 		{
+			if (other == null)
+			{
+				return false;
+			}
+
 			return this.PackageHash.Equals(other.PackageHash) &&
 			new HashSet<string>(this.OptimizedPaths).SetEquals(new HashSet<string>(other.OptimizedPaths));
 		}
