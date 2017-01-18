@@ -1,3 +1,4 @@
 [submodule "lib/libwarcraft"]
 	path = lib/libwarcraft
 	url = git@github.com:WowDevTools/libwarcraft.git
+	branch = master
