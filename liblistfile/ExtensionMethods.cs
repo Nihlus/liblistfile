@@ -95,8 +95,8 @@ namespace liblistfile
 		{
 			string result = Regex.Replace(
 				                input,
-				                Regex.Escape(search), 
-				                replacement.Replace("$", "$$"), 
+				                Regex.Escape(search),
+				                replacement.Replace("$", "$$"),
 				                RegexOptions.IgnoreCase
 			                );
 			return result;
@@ -127,7 +127,7 @@ namespace liblistfile
 		/// </summary>
 		/// <returns>The serialized size.</returns>
 		/// <param name="stringList">String list.</param>
-		public static int GetSerializedSize(this List<string> stringList)
+		public static int GetSerializedSize(this IEnumerable<string> stringList)
 		{
 			int listSize = 0;
 			foreach (string entry in stringList)

@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,7 @@ using Ionic.BZip2;
 using liblistfile.Score;
 using Warcraft.Core;
 using System;
+using Warcraft.Core.Interfaces;
 
 namespace liblistfile
 {
@@ -43,7 +45,7 @@ namespace liblistfile
 	/// uint64_t 						: CompressedDictionarySize
 	/// byte[CompressedDictionarySize]	: BZip2-compressed block of dictionary entries
 	/// </summary>
-	public class ListfileDictionary
+	public class ListfileDictionary : IBinarySerializable
 	{
 		/// <summary>
 		/// The binary file signature. Used when serializing this object into an RIFF-style
@@ -307,7 +309,7 @@ namespace liblistfile
 		/// </summary>
 		/// <returns>The optimized list.</returns>
 		/// <param name="unoptimizedList">Unoptimized list.</param>
-		public List<string> OptimizeList(List<string> unoptimizedList)
+		public List<string> OptimizeList(IEnumerable<string> unoptimizedList)
 		{
 			List<string> optimizedList = new List<string>();
 			foreach (string path in unoptimizedList)
@@ -325,7 +327,7 @@ namespace liblistfile
 					string extension = Path.GetExtension(parts[i]).ToLowerInvariant();
 					sb.Append(GetTermEntry(Path.GetFileNameWithoutExtension(parts[i])).Term);
 
-					if (!String.IsNullOrEmpty(extension))
+					if (!string.IsNullOrEmpty(extension))
 					{
 						sb.Append(extension);
 					}
@@ -347,7 +349,7 @@ namespace liblistfile
 		/// </summary>
 		/// <returns>The words from term.</returns>
 		/// <param name="term">Term.</param>
-		public static List<string> GetWordsFromTerm(string term)
+		public static IEnumerable<string> GetWordsFromTerm(string term)
 		{
 			List<string> words = new List<string>();
 
@@ -532,7 +534,7 @@ namespace liblistfile
 						// If the strings are of equal length,
 						// sort them with ordinary string comparison.
 						//
-						return String.Compare(x, y, StringComparison.Ordinal);
+						return string.Compare(x, y, StringComparison.Ordinal);
 					}
 				}
 			}
@@ -542,7 +544,7 @@ namespace liblistfile
 		/// Serializes the object into a byte array.
 		/// </summary>
 		/// <returns>The bytes.</returns>
-		public byte[] GetBytes()
+		public byte[] Serialize()
 		{
 			using (MemoryStream ms = new MemoryStream())
 			{
@@ -564,7 +566,7 @@ namespace liblistfile
 						{
 							foreach (KeyValuePair<string, ListfileDictionaryEntry> dictionaryEntryPair in this.DictionaryEntries)
 							{
-								uncompressedWriter.Write(dictionaryEntryPair.Value.GetBytes());
+								uncompressedWriter.Write(dictionaryEntryPair.Value.Serialize());
 							}
 						}
 
@@ -574,113 +576,6 @@ namespace liblistfile
 					// Write the dictionary block with leading size
 					bw.Write((ulong)compressedEntries.LongLength);
 					bw.Write(compressedEntries);
-				}
-
-				return ms.ToArray();
-			}
-		}
-	}
-
-	/// <summary>
-	/// Listfile dictionary entry.
-	///
-	///	Each dictionary entry (when serialized) is structured as follows:
-	///
-	/// char[]					: Value (a null-terminated string of a term)
-	/// float					: Score (the score of the term)
-	/// </summary>
-	public class ListfileDictionaryEntry
-	{
-		/// <summary>
-		/// Gets the current best term.
-		/// </summary>
-		/// <value>The term.</value>
-		public string Term
-		{
-			get;
-			private set;
-		}
-
-		/// <summary>
-		/// Gets the score of the current term.
-		/// </summary>
-		/// <value>The score.</value>
-		public float Score
-		{
-			get;
-			private set;
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="liblistfile.ListfileDictionaryEntry"/> class.
-		/// </summary>
-		/// <param name="inTerm">The input term.</param>
-		/// <param name="inScore">In score.</param>
-		public ListfileDictionaryEntry(string inTerm, float inScore)
-		{
-			this.Term = inTerm;
-			this.Score = inScore;
-		}
-
-		/// <summary>
-		/// Updates the term contained in this entry if the new term has a better score than the old one.
-		/// </summary>
-		/// <returns><c>true</c>, if the term was updated, <c>false</c> otherwise.</returns>
-		/// <param name="term">Term.</param>
-		public bool UpdateTerm(string term)
-		{
-			float newTermScore = TermScore.Calculate(term);
-			if (this.Score < newTermScore)
-			{
-				this.Term = term;
-				this.Score = newTermScore;
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		/// <summary>
-		/// Forcibly sets the term.
-		/// </summary>
-		/// <param name="term"></param>
-		public void SetTerm(string term)
-		{
-			this.Term = term;
-		}
-
-		/// <summary>
-		/// Forcibly sets the score of the term.
-		/// </summary>
-		/// <param name="score"></param>
-		public void SetScore(float score)
-		{
-			this.Score = score;
-		}
-
-		/// <summary>
-		/// Recalculates the score of the term.
-		/// </summary>
-		public void RecalculateScore()
-		{
-			this.Score = TermScore.Calculate(this.Term);
-		}
-
-		/// <summary>
-		/// Serializes the object into a byte array.
-		/// </summary>
-		/// <returns>The bytes.</returns>
-		public byte[] GetBytes()
-		{
-			using (MemoryStream ms = new MemoryStream(this.Term.Length + 1 + 4))
-			{
-				using (BinaryWriter bw = new BinaryWriter(ms))
-				{
-					bw.WriteNullTerminatedString(this.Term);
-					bw.Write(this.Score);
 				}
 
 				return ms.ToArray();
