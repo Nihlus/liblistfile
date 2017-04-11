@@ -40,7 +40,7 @@ namespace liblistfile
     /// byte[]						: BZip2 compressed cleartext list of optimized
     ///							 	  list entries.
     /// </summary>
-    public class OptimizedList : IEquatable<OptimizedList>, IBinarySerializable, IRIFFChunk
+    public class OptimizedList : IEquatable<OptimizedList>, IBinarySerializable, IIFFChunk
     {
         /// <summary>
         /// The binary file signature. Used when serializing this object into an RIFF-style
