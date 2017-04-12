@@ -27,8 +27,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Ionic.BZip2;
 using liblistfile.Score;
-using Warcraft.Core;
 using System;
+using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
 namespace liblistfile

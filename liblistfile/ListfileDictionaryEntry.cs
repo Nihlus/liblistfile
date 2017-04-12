@@ -22,7 +22,7 @@
 
 using System.IO;
 using liblistfile.Score;
-using Warcraft.Core;
+using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
 namespace liblistfile

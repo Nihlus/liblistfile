@@ -24,7 +24,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Ionic.BZip2;
-using Warcraft.Core;
+using Warcraft.Core.Extensions;
 
 namespace liblistfile
 {

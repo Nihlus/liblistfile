@@ -24,7 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Ionic.BZip2;
-using Warcraft.Core;
+using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
 namespace liblistfile
