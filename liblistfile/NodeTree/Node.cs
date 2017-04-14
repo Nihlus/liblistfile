@@ -33,6 +33,11 @@ namespace liblistfile.NodeTree
 	public class Node
 	{
 		/// <summary>
+		/// The base serialized size of the node, were it not to have any children.
+		/// </summary>
+		public const long BaseSize = sizeof(uint) + (sizeof(long) * 2) + sizeof(ulong);
+
+		/// <summary>
 		/// The type of the node.
 		/// </summary>
 		public NodeType Type;
@@ -84,6 +89,15 @@ namespace liblistfile.NodeTree
 			}
 
 			return outNode;
+		}
+
+		/// <summary>
+		/// Gets the total size of the node in serialized form.
+		/// </summary>
+		/// <returns>The number of bytes this node would occupy.</returns>
+		public long GetTotalSize()
+		{
+			return (long)(BaseSize + this.ChildCount * sizeof(ulong));
 		}
 	}
 }

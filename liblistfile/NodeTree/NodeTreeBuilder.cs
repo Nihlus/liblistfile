@@ -22,6 +22,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Warcraft.Core.Extensions;
 
 namespace liblistfile.NodeTree
 {
@@ -30,16 +32,31 @@ namespace liblistfile.NodeTree
 	/// </summary>
 	public class NodeTreeBuilder
 	{
-		private readonly Node RootNode;
+		/*
+			Common constants
+		*/
+
+		private const long HeaderSize = sizeof(uint) + sizeof(long) * 3;
 
 		/*
 			Internal transient register data
 		*/
 
+		private readonly Node RootNode;
+
 		private readonly List<string> Names = new List<string>();
 		private readonly Dictionary<Tuple<string, string>, Node> Nodes = new Dictionary<Tuple<string, string>, Node>();
 		private readonly Dictionary<Node, List<Node>> NodeChildren = new Dictionary<Node, List<Node>>();
 		private readonly Dictionary<Node, Node> NodeParents = new Dictionary<Node, Node>();
+
+		/*
+			Internal building register data
+		*/
+		private readonly Dictionary<string, long> AbsoluteNameOffsets = new Dictionary<string, long>();
+		private readonly Dictionary<Node, long> AbsoluteNodeOffsets = new Dictionary<Node, long>();
+		private long NodesOffset;
+		private long NameBlockOffset;
+		private long SortingListsOffset;
 
 		public NodeTreeBuilder()
 		{
@@ -176,8 +193,69 @@ namespace liblistfile.NodeTree
 			}
 		}
 
+		/// <summary>
+		/// Build an <see cref="OptimizedNodeTree"/> object from the consumed paths. This method can be called as many
+		/// times as needed, if more paths are added.
+		/// </summary>
+		/// <returns></returns>
+		/// <exception cref="NotImplementedException"></exception>
 		public OptimizedNodeTree Build()
 		{
+			// 1: Buld nodes (done in ConsumePath)
+			// 2: Build name block
+
+			Dictionary<string, long> relativeNameOffsets = new Dictionary<string, long>();
+			byte[] nameBlock;
+			using (MemoryStream ms = new MemoryStream())
+			using (BinaryWriter bw = new BinaryWriter(ms))
+			{
+				int currentNameBlockOffset = 0;
+				foreach (string name in this.Names)
+				{
+					relativeNameOffsets.Add(name, currentNameBlockOffset);
+
+					int storedNameLength = name.Length + 1;
+					bw.WriteNullTerminatedString(name);
+
+					currentNameBlockOffset += storedNameLength;
+				}
+
+				nameBlock = ms.ToArray();
+			}
+
+			// 3: Build layout
+				// 3.1: Order is header, root, nodes, name, sorting lists
+			long currentLayoutOffset = 0;
+			currentLayoutOffset += HeaderSize;
+
+			// Save the node block offset
+			this.NodesOffset = currentLayoutOffset;
+
+			// Calculate the offsets for all of the nodes
+			this.AbsoluteNodeOffsets.Add(this.RootNode, currentLayoutOffset);
+			currentLayoutOffset += this.RootNode.GetTotalSize();
+
+			foreach (Node node in this.Nodes.Values)
+			{
+				this.AbsoluteNodeOffsets.Add(node, currentLayoutOffset);
+				currentLayoutOffset += node.GetTotalSize();
+			}
+
+			// Calculate absolute offsets for the names in the name block
+			this.NameBlockOffset = currentLayoutOffset;
+			foreach (KeyValuePair<string, long> relativeNameOffset in relativeNameOffsets)
+			{
+				this.AbsoluteNameOffsets.Add(relativeNameOffset.Key, relativeNameOffset.Value + currentLayoutOffset);
+			}
+
+			currentLayoutOffset += nameBlock.Length;
+
+			// Layout of the sorting list block
+			this.SortingListsOffset = currentLayoutOffset;
+
+			// 4: Set known values
+			// 5: Write data to stream, create object and return.
+
 			throw new NotImplementedException();
 		}
 	}
