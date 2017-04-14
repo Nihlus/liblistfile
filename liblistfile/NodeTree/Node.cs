@@ -22,6 +22,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Warcraft.Core.Interfaces;
 
 namespace liblistfile.NodeTree
 {
@@ -30,7 +31,7 @@ namespace liblistfile.NodeTree
 	///
 	/// Typically, file nodes do not have any children, although it is not explicitly disallowed.
 	/// </summary>
-	public class Node
+	public class Node : IBinarySerializable
 	{
 		/// <summary>
 		/// The base serialized size of the node, were it not to have any children.
@@ -98,6 +99,25 @@ namespace liblistfile.NodeTree
 		public long GetTotalSize()
 		{
 			return (long)(BaseSize + this.ChildCount * sizeof(ulong));
+		}
+
+		public byte[] Serialize()
+		{
+			using (MemoryStream ms = new MemoryStream())
+			using (BinaryWriter bw = new BinaryWriter(ms))
+			{
+				bw.Write((uint)this.Type);
+				bw.Write(this.NameOffset);
+				bw.Write(this.ParentOffset);
+				bw.Write(this.ChildCount);
+
+				foreach (ulong childOffset in this.ChildOffsets)
+				{
+					bw.Write(childOffset);
+				}
+
+				return ms.ToArray();
+			}
 		}
 	}
 }

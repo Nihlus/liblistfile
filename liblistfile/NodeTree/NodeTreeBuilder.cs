@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Warcraft.Core.Extensions;
 
 namespace liblistfile.NodeTree
@@ -46,17 +47,17 @@ namespace liblistfile.NodeTree
 
 		private readonly List<string> Names = new List<string>();
 		private readonly Dictionary<Tuple<string, string>, Node> Nodes = new Dictionary<Tuple<string, string>, Node>();
-		private readonly Dictionary<Node, List<Node>> NodeChildren = new Dictionary<Node, List<Node>>();
-		private readonly Dictionary<Node, Node> NodeParents = new Dictionary<Node, Node>();
+		private readonly Dictionary<Tuple<string, string>, List<Tuple<string, string>>> NodeChildren = new Dictionary<Tuple<string, string>, List<Tuple<string, string>>>();
+		private readonly Dictionary<Tuple<string, string>, Tuple<string, string>> NodeParents = new Dictionary<Tuple<string, string>, Tuple<string, string>>();
 
 		/*
 			Internal building register data
 		*/
 		private readonly Dictionary<string, long> AbsoluteNameOffsets = new Dictionary<string, long>();
-		private readonly Dictionary<Node, long> AbsoluteNodeOffsets = new Dictionary<Node, long>();
-		private long NodesOffset;
+		private readonly Dictionary<Tuple<string, string>, long> AbsoluteNodeOffsets = new Dictionary<Tuple<string, string>, long>();
+		private long NodeBlockOffset;
 		private long NameBlockOffset;
-		private long SortingListsOffset;
+		private long SortingBlockOffset;
 
 		public NodeTreeBuilder()
 		{
@@ -65,11 +66,12 @@ namespace liblistfile.NodeTree
 			{
 				Type = NodeType.Directory,
 				NameOffset = -1,
+				ParentOffset = -1,
 				ChildCount = 0,
 				ChildOffsets = new List<ulong>()
 			};
 			this.Nodes.Add(new Tuple<string, string>("", ""), this.RootNode);
-			this.NodeChildren[this.RootNode] = new List<Node>();
+			this.NodeChildren[new Tuple<string, string>("", "")] = new List<Tuple<string, string>>();
 		}
 
 		public NodeTreeBuilder(IEnumerable<string> paths) : this()
@@ -177,12 +179,12 @@ namespace liblistfile.NodeTree
 
 				// Enter the created data into the transient registers
 				this.Nodes.Add(nodeIdentifier, node);
-				this.NodeChildren[node] = new List<Node>();
-				this.NodeParents.Add(node, this.Nodes[parentIdentifier]);
+				this.NodeChildren[nodeIdentifier] = new List<Tuple<string, string>>();
+				this.NodeParents.Add(nodeIdentifier, parentIdentifier);
 
 				// Update the parent node with the new information
 				++this.Nodes[parentIdentifier].ChildCount;
-				this.NodeChildren[this.Nodes[parentIdentifier]].Add(node);
+				this.NodeChildren[parentIdentifier].Add(nodeIdentifier);
 
 				// Append the node name (if it doesn't already exist) to the name list so we can build the name
 				// block later
@@ -229,16 +231,13 @@ namespace liblistfile.NodeTree
 			currentLayoutOffset += HeaderSize;
 
 			// Save the node block offset
-			this.NodesOffset = currentLayoutOffset;
+			this.NodeBlockOffset = currentLayoutOffset;
 
 			// Calculate the offsets for all of the nodes
-			this.AbsoluteNodeOffsets.Add(this.RootNode, currentLayoutOffset);
-			currentLayoutOffset += this.RootNode.GetTotalSize();
-
-			foreach (Node node in this.Nodes.Values)
+			foreach (var node in this.Nodes)
 			{
-				this.AbsoluteNodeOffsets.Add(node, currentLayoutOffset);
-				currentLayoutOffset += node.GetTotalSize();
+				this.AbsoluteNodeOffsets.Add(node.Key, currentLayoutOffset);
+				currentLayoutOffset += node.Value.GetTotalSize();
 			}
 
 			// Calculate absolute offsets for the names in the name block
@@ -251,12 +250,63 @@ namespace liblistfile.NodeTree
 			currentLayoutOffset += nameBlock.Length;
 
 			// Layout of the sorting list block
-			this.SortingListsOffset = currentLayoutOffset;
+			this.SortingBlockOffset = currentLayoutOffset;
 
 			// 4: Set known values
-			// 5: Write data to stream, create object and return.
+			foreach (var node in this.Nodes)
+			{
+				// 4.1 Set name offsets
+				// Skip the root node, it has no name
+				if (node.Value.NameOffset == -2)
+				{
+					string nodeName = node.Key.Item2;
+					long nameOffset = this.AbsoluteNameOffsets[nodeName];
 
-			throw new NotImplementedException();
+					node.Value.NameOffset = nameOffset;
+				}
+
+				// 4.2 Set child offsets
+				var childList = this.NodeChildren[node.Key];
+				foreach (var childIdentifier in childList)
+				{
+					node.Value.ChildOffsets.Add((ulong)this.AbsoluteNodeOffsets[childIdentifier]);
+				}
+
+				// 4.3 Set parent offsets
+				// Skip the root node, it has no parent
+				if (node.Value.ParentOffset == -1)
+				{
+					continue;
+				}
+				node.Value.ParentOffset = this.AbsoluteNodeOffsets[this.NodeParents[node.Key]];
+			}
+
+			// 5: Write data to stream, create object and return.
+			MemoryStream outputStream = new MemoryStream();
+			using (BinaryWriter bw = new BinaryWriter(outputStream, Encoding.Default, true))
+			{
+				// 5.1 Write header
+				bw.Write(OptimizedNodeTree.Version);
+				bw.Write(this.NodeBlockOffset);
+				bw.Write(this.NameBlockOffset);
+				bw.Write(this.SortingBlockOffset);
+
+				// 5.2 Write nodes
+				foreach (Node node in this.Nodes.Values)
+				{
+					bw.Write(node.Serialize());
+				}
+
+				// 5.3 Write name block
+				bw.Write(nameBlock);
+
+				// 5.4 TODO: Write sorting lists
+
+				bw.Flush();
+				outputStream.Flush();
+			}
+
+			return new OptimizedNodeTree(outputStream);
 		}
 	}
 }

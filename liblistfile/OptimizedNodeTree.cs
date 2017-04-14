@@ -38,7 +38,7 @@ namespace liblistfile
 	/// </summary>
 	public class OptimizedNodeTree : IDisposable, IBinarySerializable
 	{
-		private const uint Version = 1;
+		public const uint Version = 1;
 		private long NodesOffset;
 		private long NamesOffset;
 		private long SortListsOffset;
@@ -84,6 +84,9 @@ namespace liblistfile
 			this.TreeStream = dataStream;
 			this.TreeReader = new BinaryReader(this.TreeStream);
 
+			// Reset the position, in case the stream was recently created.
+			this.TreeReader.BaseStream.Position = 0;
+
 			uint storedVersion = this.TreeReader.ReadUInt32();
 			if (storedVersion != Version)
 			{
@@ -112,6 +115,7 @@ namespace liblistfile
 		{
 			using (MemoryStream ms = new MemoryStream())
 			{
+				this.TreeStream.Position = 0;
 				this.TreeStream.CopyTo(ms);
 
 				return ms.ToArray();
