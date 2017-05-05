@@ -64,7 +64,7 @@ namespace liblistfile
 					return this.InternalRoot;
 				}
 
-				this.InternalRoot = Node.ReadNode(this.TreeReader, 0);
+				this.InternalRoot = Node.ReadNode(this.TreeReader, this.NodesOffset);
 				return this.InternalRoot;
 			}
 		}

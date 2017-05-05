@@ -196,12 +196,42 @@ namespace liblistfile.NodeTree
 				// Update the parent node with the new information
 				++this.Nodes[parentIdentifier].ChildCount;
 				this.NodeChildren[parentIdentifier].Add(nodeIdentifier);
+				AddTypeToParentChain(fileType, parentIdentifier);
 
 				// Append the node name (if it doesn't already exist) to the name list so we can build the name
 				// block later
 				if (!this.Names.Contains(pathParts[i]))
 				{
 					this.Names.Add(pathParts[i]);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Adds a contained file type to a chain of parent directories (upwards).
+		/// </summary>
+		/// <param name="fileType">The type to add to the chain.</param>
+		/// <param name="initialParentIdentifier">The start of the chain.</param>
+		private void AddTypeToParentChain(WarcraftFileType fileType, Tuple<string, string> initialParentIdentifier)
+		{
+			Tuple<string, string> currentParentIdentifier = initialParentIdentifier;
+
+			bool hasParent = true;
+			while (hasParent)
+			{
+				Node currentNode = this.Nodes[currentParentIdentifier];
+				currentNode.FileType |= fileType;
+
+				if (currentNode .ParentOffset != -1)
+				{
+					currentParentIdentifier = this.NodeParents[currentParentIdentifier];
+				}
+				else
+				{
+					// We've reached the top of the chain, so add the type to the root node.
+					this.RootNode.FileType |= fileType;
+
+					hasParent = false;
 				}
 			}
 		}
