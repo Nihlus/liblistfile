@@ -22,6 +22,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using Warcraft.Core;
 using Warcraft.Core.Interfaces;
 
 namespace liblistfile.NodeTree
@@ -36,12 +37,17 @@ namespace liblistfile.NodeTree
 		/// <summary>
 		/// The base serialized size of the node, were it not to have any children.
 		/// </summary>
-		public const long BaseSize = sizeof(uint) + (sizeof(long) * 2) + sizeof(ulong);
+		public const long BaseSize = (sizeof(uint) * 2) + (sizeof(long) * 2) + sizeof(ulong);
 
 		/// <summary>
 		/// The type of the node.
 		/// </summary>
 		public NodeType Type;
+
+		/// <summary>
+		/// The type of the file or directory pointed to by the node.
+		/// </summary>
+		public WarcraftFileType FileType;
 
 		/// <summary>
 		/// The absolute offset where the name of this node is found. A negative value denotes no name.
@@ -78,6 +84,7 @@ namespace liblistfile.NodeTree
 			Node outNode = new Node
 			{
 				Type = (NodeType) br.ReadUInt32(),
+				FileType = (WarcraftFileType)br.ReadUInt32(),
 				NameOffset = br.ReadInt64(),
 				ParentOffset = br.ReadInt64(),
 				ChildCount = br.ReadUInt64(),
@@ -107,6 +114,7 @@ namespace liblistfile.NodeTree
 			using (BinaryWriter bw = new BinaryWriter(ms))
 			{
 				bw.Write((uint)this.Type);
+				bw.Write((uint)this.FileType);
 				bw.Write(this.NameOffset);
 				bw.Write(this.ParentOffset);
 				bw.Write(this.ChildCount);

@@ -24,6 +24,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
+using Warcraft.Core;
 using Warcraft.Core.Extensions;
 
 namespace liblistfile.NodeTree
@@ -168,10 +170,19 @@ namespace liblistfile.NodeTree
 				// a part is last, then it is by definition a file.
 				NodeType nodeType = isPartLastInPath ? NodeType.File : NodeType.Directory;
 
+				if (nodeType == NodeType.File)
+				{
+					// TODO: Check with the package it is stored in if it's deleted or not
+				}
+
+				// We'll also store the type of file that's referenced for later use.
+				WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : GetFileType(pathParts[i]);
+
 				// -2 is used here to denote a missing but existing name that is to be filled in later.
 				Node node = new Node
 				{
 					Type = nodeType,
+					FileType = fileType,
 					NameOffset = -2,
 					ChildCount = 0,
 					ChildOffsets = new List<ulong>()
@@ -307,6 +318,136 @@ namespace liblistfile.NodeTree
 			}
 
 			return new OptimizedNodeTree(outputStream);
+		}
+
+		/// <summary>
+		/// Gets the type of the referenced file.
+		/// </summary>
+		/// <returns>The referenced file type.</returns>
+		public static WarcraftFileType GetFileType(string pathPart)
+		{
+			if (pathPart == null)
+			{
+				throw new ArgumentNullException(nameof(pathPart));
+			}
+
+			string fileExtension = Path.GetExtension(pathPart).Replace(".", "");
+
+			switch (fileExtension)
+			{
+				case "mpq":
+				{
+					return WarcraftFileType.MoPaQArchive;
+				}
+				case "toc":
+				{
+					return WarcraftFileType.AddonManifest;
+				}
+				case "sig":
+				{
+					return WarcraftFileType.AddonManifestSignature;
+				}
+				case "wtf":
+				{
+					return WarcraftFileType.ConfigurationFile;
+				}
+				case "dbc":
+				{
+					return WarcraftFileType.DatabaseContainer;
+				}
+				case "bls":
+				{
+					return WarcraftFileType.Shader;
+				}
+				case "wlw":
+				{
+					return WarcraftFileType.TerrainWater;
+				}
+				case "wlq":
+				{
+					return WarcraftFileType.TerrainLiquid;
+				}
+				case "wdl":
+				{
+					return WarcraftFileType.TerrainLiquid;
+				}
+				case "wdt":
+				{
+					return WarcraftFileType.TerrainTable;
+				}
+				case "adt":
+				{
+					return WarcraftFileType.TerrainData;
+				}
+				case "blp":
+				{
+					return WarcraftFileType.BinaryImage;
+				}
+				case "trs":
+				{
+					return WarcraftFileType.Hashmap;
+				}
+				case "m2":
+				case "mdx":
+				{
+					return WarcraftFileType.GameObjectModel;
+				}
+				case "wmo":
+				{
+					Regex groupDetectRegex = new Regex("(.+_[0-9]{3}.wmo)", RegexOptions.Multiline);
+
+					if (groupDetectRegex.IsMatch(pathPart))
+					{
+						return WarcraftFileType.WorldObjectModelGroup;
+					}
+					else
+					{
+						return WarcraftFileType.WorldObjectModel;
+					}
+				}
+				case "mp3":
+				{
+					return WarcraftFileType.MP3Audio;
+				}
+				case "wav":
+				{
+					return WarcraftFileType.WaveAudio;
+				}
+				case "xml":
+				{
+					return WarcraftFileType.XML;
+				}
+				case "jpg":
+				case "jpeg":
+				{
+					return WarcraftFileType.JPGImage;
+				}
+				case "gif":
+				{
+					return WarcraftFileType.GIFImage;
+				}
+				case "png":
+				{
+					return WarcraftFileType.PNGImage;
+				}
+				case "ini":
+				{
+					return WarcraftFileType.INI;
+				}
+				case "pdf":
+				{
+					return WarcraftFileType.PDF;
+				}
+				case "htm":
+				case "html":
+				{
+					return WarcraftFileType.HTML;
+				}
+				default:
+				{
+					return WarcraftFileType.Unknown;
+				}
+			}
 		}
 	}
 }
