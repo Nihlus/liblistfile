@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Warcraft.Core;
@@ -45,35 +46,41 @@ namespace liblistfile.NodeTree
 			Internal transient register data
 		*/
 
-		private readonly Node RootNode;
+		protected readonly Node RootNode;
 
-		private readonly List<string> Names = new List<string>();
-		private readonly Dictionary<Tuple<string, string>, Node> Nodes = new Dictionary<Tuple<string, string>, Node>();
-		private readonly Dictionary<Tuple<string, string>, List<Tuple<string, string>>> NodeChildren = new Dictionary<Tuple<string, string>, List<Tuple<string, string>>>();
-		private readonly Dictionary<Tuple<string, string>, Tuple<string, string>> NodeParents = new Dictionary<Tuple<string, string>, Tuple<string, string>>();
+		protected readonly List<string> Names = new List<string>();
+		protected readonly Dictionary<NodeIdentifier, Node> Nodes = new Dictionary<NodeIdentifier, Node>();
+		protected readonly Dictionary<NodeIdentifier, List<NodeIdentifier>> NodeChildren = new Dictionary<NodeIdentifier, List<NodeIdentifier>>();
+		protected readonly Dictionary<NodeIdentifier, NodeIdentifier> NodeParents = new Dictionary<NodeIdentifier, NodeIdentifier>();
 
 		/*
 			Internal building register data
 		*/
-		private readonly Dictionary<string, long> AbsoluteNameOffsets = new Dictionary<string, long>();
-		private readonly Dictionary<Tuple<string, string>, long> AbsoluteNodeOffsets = new Dictionary<Tuple<string, string>, long>();
+		protected readonly Dictionary<string, long> AbsoluteNameOffsets = new Dictionary<string, long>();
+		protected readonly Dictionary<NodeIdentifier, long> AbsoluteNodeOffsets = new Dictionary<NodeIdentifier, long>();
+
+		private byte[] NameBlock;
+
 		private long NodeBlockOffset;
 		private long NameBlockOffset;
 		private long SortingBlockOffset;
 
 		public NodeTreeBuilder()
 		{
+			NodeIdentifier rootIdentifier = new NodeIdentifier("", "");
+
 			// Form a root node. -1 is used for the NameOffset to denote a nonexistent name.
 			this.RootNode = new Node
 			{
-				Type = NodeType.Directory,
+				Type = NodeType.Directory | NodeType.Meta,
 				NameOffset = -1,
 				ParentOffset = -1,
 				ChildCount = 0,
 				ChildOffsets = new List<ulong>()
 			};
-			this.Nodes.Add(new Tuple<string, string>("", ""), this.RootNode);
-			this.NodeChildren[new Tuple<string, string>("", "")] = new List<Tuple<string, string>>();
+
+			this.Nodes.Add(rootIdentifier, this.RootNode);
+			this.NodeChildren[rootIdentifier] = new List<NodeIdentifier>();
 		}
 
 		public NodeTreeBuilder(IEnumerable<string> paths) : this()
@@ -91,43 +98,19 @@ namespace liblistfile.NodeTree
 		}
 
 		/// <summary>
-		/// Creates an identifier for a node, given the path it is a part of, and the part which belongs to the node.
-		/// </summary>
-		/// <param name="pathParts">The path, split into an array of constituent parts.</param>
-		/// <param name="part">The part of the path which belongs to the node.</param>
-		/// <returns>A new tuple which uniquely identifies a node.</returns>
-		private static Tuple<string, string> CreateNodeIdentifier(string[] pathParts, string part)
-		{
-			int partIndex = Array.IndexOf(pathParts, part);
-			if (partIndex > 0)
-			{
-				return new Tuple<string, string>(pathParts[partIndex - 1], part);
-			}
-
-			return new Tuple<string, string>("", part);
-		}
-
-		/// <summary>
 		/// Computes the identifier of the parent node for a node, given the path it is a part of, and the part
 		/// which belongs to the node.
 		/// </summary>
-		/// <param name="pathParts">The path, split into an array of constituent parts.</param>
-		/// <param name="part">The part of the path which belongs to the node.</param>
-		/// <returns>A new tuple which uniquely identifies a node.</returns>
-		private static Tuple<string, string> GetParentIdentifier(string[] pathParts, string part)
+		/// <param name="nodeIdentifier">The node identifier to compute the parent for.</param>
+		/// <returns>A new object which uniquely identifies a node.</returns>
+		protected static NodeIdentifier GetParentIdentifier(NodeIdentifier nodeIdentifier)
 		{
-			int partIndex = Array.IndexOf(pathParts, part);
-			if (partIndex >= 2)
+			if (nodeIdentifier == null)
 			{
-				return new Tuple<string, string>(pathParts[partIndex - 2], pathParts[partIndex - 1]);
+				throw new ArgumentNullException(nameof(nodeIdentifier));
 			}
 
-			if (partIndex == 1)
-			{
-				return new Tuple<string, string>("", pathParts[partIndex - 1]);
-			}
-
-			return new Tuple<string, string>("", "");
+			return new NodeIdentifier(nodeIdentifier.Package, Path.GetDirectoryName(nodeIdentifier.Path)?.Replace('\\', '/'));
 		}
 
 		/// <summary>
@@ -138,7 +121,7 @@ namespace liblistfile.NodeTree
 		/// The path to consume. Both \ and / characters are accepted, and will be converted to /
 		/// internally. The path is split into components by this character.
 		/// </param>
-		private void ConsumePath(string path)
+		protected virtual void ConsumePath(string path)
 		{
 			// Replace any instances of windows path separators with unix path separators to ensure that no matter
 			// what platform we're doing this on, the splitting will be the same.
@@ -155,8 +138,8 @@ namespace liblistfile.NodeTree
 				// Each node is identified by its own name, and the name of its parent. Since we're mirroring a file
 				// system here, duplicate names under one parent are not allowed, but they are allowed globally.
 				// We'll acquire the identifiers for the new node and its parent for future use.
-				Tuple<string, string> parentIdentifier = GetParentIdentifier(pathParts, pathParts[i]);
-				Tuple<string, string> nodeIdentifier = CreateNodeIdentifier(pathParts, pathParts[i]);
+				NodeIdentifier nodeIdentifier = new NodeIdentifier("", string.Join("/", pathParts.Take(i + 1)));
+				NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
 
 				// There's a good chance this node has already been encountered somewhere.
 				// If that is the case, we can skip it.
@@ -169,11 +152,6 @@ namespace liblistfile.NodeTree
 				// Since listfiles do not support empty directories, we're not checking for extensions here. If
 				// a part is last, then it is by definition a file.
 				NodeType nodeType = isPartLastInPath ? NodeType.File : NodeType.Directory;
-
-				if (nodeType == NodeType.File)
-				{
-					// TODO: Check with the package it is stored in if it's deleted or not
-				}
 
 				// We'll also store the type of file that's referenced for later use.
 				WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : GetFileType(pathParts[i]);
@@ -190,7 +168,7 @@ namespace liblistfile.NodeTree
 
 				// Enter the created data into the transient registers
 				this.Nodes.Add(nodeIdentifier, node);
-				this.NodeChildren[nodeIdentifier] = new List<Tuple<string, string>>();
+				this.NodeChildren.Add(nodeIdentifier, new List<NodeIdentifier>());
 				this.NodeParents.Add(nodeIdentifier, parentIdentifier);
 
 				// Update the parent node with the new information
@@ -212,14 +190,21 @@ namespace liblistfile.NodeTree
 		/// </summary>
 		/// <param name="fileType">The type to add to the chain.</param>
 		/// <param name="initialParentIdentifier">The start of the chain.</param>
-		private void AddTypeToParentChain(WarcraftFileType fileType, Tuple<string, string> initialParentIdentifier)
+		protected void AddTypeToParentChain(WarcraftFileType fileType, NodeIdentifier initialParentIdentifier)
 		{
-			Tuple<string, string> currentParentIdentifier = initialParentIdentifier;
+			NodeIdentifier currentParentIdentifier = initialParentIdentifier;
 
 			bool hasParent = true;
 			while (hasParent)
 			{
 				Node currentNode = this.Nodes[currentParentIdentifier];
+				if (currentNode.FileType.HasFlag(fileType))
+				{
+					// Early escape - if a parent is already tagged with the file type, then all
+					// parents above it are also tagged.
+					return;
+				}
+
 				currentNode.FileType |= fileType;
 
 				if (currentNode .ParentOffset != -1)
@@ -237,18 +222,16 @@ namespace liblistfile.NodeTree
 		}
 
 		/// <summary>
-		/// Build an <see cref="OptimizedNodeTree"/> object from the consumed paths. This method can be called as many
-		/// times as needed, if more paths are added.
+		/// Builds the gathered data into data ready to be written into a tree object from the consumed paths.
+		/// This method can be called as many times as needed, if more paths are added.
 		/// </summary>
 		/// <returns></returns>
-		/// <exception cref="NotImplementedException"></exception>
-		public OptimizedNodeTree Build()
+		public virtual void Build()
 		{
 			// 1: Buld nodes (done in ConsumePath)
 			// 2: Build name block
 
 			Dictionary<string, long> relativeNameOffsets = new Dictionary<string, long>();
-			byte[] nameBlock;
 			using (MemoryStream ms = new MemoryStream())
 			using (BinaryWriter bw = new BinaryWriter(ms))
 			{
@@ -263,7 +246,7 @@ namespace liblistfile.NodeTree
 					currentNameBlockOffset += storedNameLength;
 				}
 
-				nameBlock = ms.ToArray();
+				this.NameBlock = ms.ToArray();
 			}
 
 			// 3: Build layout
@@ -283,12 +266,12 @@ namespace liblistfile.NodeTree
 
 			// Calculate absolute offsets for the names in the name block
 			this.NameBlockOffset = currentLayoutOffset;
-			foreach (KeyValuePair<string, long> relativeNameOffset in relativeNameOffsets)
+			foreach (var relativeNameOffset in relativeNameOffsets)
 			{
 				this.AbsoluteNameOffsets.Add(relativeNameOffset.Key, relativeNameOffset.Value + currentLayoutOffset);
 			}
 
-			currentLayoutOffset += nameBlock.Length;
+			currentLayoutOffset += this.NameBlock.Length;
 
 			// Layout of the sorting list block
 			this.SortingBlockOffset = currentLayoutOffset;
@@ -300,7 +283,16 @@ namespace liblistfile.NodeTree
 				// Skip the root node, it has no name
 				if (node.Value.NameOffset == -2)
 				{
-					string nodeName = node.Key.Item2;
+					string nodeName = node.Key.GetNodeName();
+					long nameOffset = this.AbsoluteNameOffsets[nodeName];
+
+					node.Value.NameOffset = nameOffset;
+				}
+
+				if (node.Value.NameOffset == -3)
+				{
+					// Use the package name as the node name instead
+					string nodeName = node.Key.Package;
 					long nameOffset = this.AbsoluteNameOffsets[nodeName];
 
 					node.Value.NameOffset = nameOffset;
@@ -321,8 +313,15 @@ namespace liblistfile.NodeTree
 				}
 				node.Value.ParentOffset = this.AbsoluteNodeOffsets[this.NodeParents[node.Key]];
 			}
+		}
 
-			// 5: Write data to stream, create object and return.
+		/// <summary>
+		/// Takes the finalized data in the builder (created with <see cref="Build"/>), writes it to a stream, and
+		/// forms a tree from it.
+		/// </summary>
+		/// <returns></returns>
+		public OptimizedNodeTree CreateTree()
+		{
 			MemoryStream outputStream = new MemoryStream();
 			using (BinaryWriter bw = new BinaryWriter(outputStream, Encoding.Default, true))
 			{
@@ -339,7 +338,7 @@ namespace liblistfile.NodeTree
 				}
 
 				// 5.3 Write name block
-				bw.Write(nameBlock);
+				bw.Write(this.NameBlock);
 
 				// 5.4 TODO: Write sorting lists
 

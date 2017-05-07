@@ -41,7 +41,9 @@
   <ItemGroup>
     <Compile Include="ByteArrayComparer.cs" />
     <Compile Include="ListfileDictionaryEntry.cs" />
+    <Compile Include="NodeTree\MultiPackageNodeTreeBuilder.cs" />
     <Compile Include="NodeTree\Node.cs" />
+    <Compile Include="NodeTree\NodeIdentifier.cs" />
     <Compile Include="NodeTree\NodeTreeBuilder.cs" />
     <Compile Include="NodeTree\NodeType.cs" />
     <Compile Include="OptimizedList.cs" />

@@ -55,6 +55,11 @@ namespace liblistfile.NodeTree
 		/// The file the node maps to in the archive is a deletion marker, and as such the file
 		/// should be considered deleted.
 		/// </summary>
-		Deleted					= 0x10
+		Deleted					= 0x10,
+
+		/// <summary>
+		/// The file the node maps to never existed, but it may have been referred to by something else.
+		/// </summary>
+		Nonexistent				= 0x20
 	}
 }

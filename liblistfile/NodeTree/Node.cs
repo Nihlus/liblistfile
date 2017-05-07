@@ -29,6 +29,12 @@ namespace liblistfile.NodeTree
 {
 	/// <summary>
 	/// Represents a node in a file tree. A node can be a directory or a file, and can have any number of child nodes.
+	/// Furthermore, a node can be virtual, and be a "supernode" for other nodes. While not strictly enforced, it is
+	/// expected that these subnodes have the same paths and names as the virtual node, and only differ in that they
+	/// reside inside packages, while the virtual node is in a top-level tree.
+	///
+	/// Whether or not a node is virtual depends on whether or not the flag <see cref="NodeType.Virtual"/> is set in
+	/// <see cref="Type"/>.
 	///
 	/// Typically, file nodes do not have any children, although it is not explicitly disallowed.
 	/// </summary>
@@ -72,6 +78,18 @@ namespace liblistfile.NodeTree
 		public List<ulong> ChildOffsets = new List<ulong>();
 
 		/// <summary>
+		/// The number of hard nodes that this node has. This is only > 0 if <see cref="Type"/> is flagged
+		/// as <see cref="NodeType.Virtual"/>.
+		/// </summary>
+		public ulong HardNodeCount;
+
+		/// <summary>
+		/// A list of absolute offsets to where the hard nodes of this virtual node can be found. This only contains
+		/// data if <see cref="Type"/> is flagged as <see cref="NodeType.Virtual"/>.
+		/// </summary>
+		public List<ulong> HardNodeOffsets = new List<ulong>();
+
+		/// <summary>
 		/// Reads a new node from the specified <see cref="BinaryReader"/> at the specified position.
 		/// </summary>
 		/// <param name="br"></param>
@@ -94,6 +112,15 @@ namespace liblistfile.NodeTree
 			for (ulong i = 0; i < outNode.ChildCount; ++i)
 			{
 				outNode.ChildOffsets.Add(br.ReadUInt64());
+			}
+
+			if (outNode.Type.HasFlag(NodeType.Virtual))
+			{
+				outNode.HardNodeCount = br.ReadUInt64();
+				for (ulong i = 0; i < outNode.HardNodeCount; ++i)
+				{
+					outNode.HardNodeOffsets.Add(br.ReadUInt64());
+				}
 			}
 
 			return outNode;
@@ -122,6 +149,15 @@ namespace liblistfile.NodeTree
 				foreach (ulong childOffset in this.ChildOffsets)
 				{
 					bw.Write(childOffset);
+				}
+
+				if (this.Type.HasFlag(NodeType.Virtual))
+				{
+					bw.Write(this.HardNodeCount);
+					foreach (ulong hardNodeOffset in this.HardNodeOffsets)
+					{
+						bw.Write(hardNodeOffset);
+					}
 				}
 
 				return ms.ToArray();
