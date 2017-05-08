@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Warcraft.Core;
 using Warcraft.MPQ;
@@ -89,87 +90,105 @@ namespace liblistfile.NodeTree
 		public void ConsumePackage(string packageName, IPackage package)
 		{
 			CreateMetaPackageNode(packageName);
-			IEnumerable<string> packagePaths = package.GetFileList();
+			List<string> packagePaths = package.GetFileList();
 
-			foreach (string path in packagePaths)
+			// We'll be progressively removing entries we're done with. Once they've all been consumed, we'll be done.
+			while (packagePaths.Count > 0)
 			{
-				// Replace any instances of windows path separators with unix path separators to ensure that no matter
-				// what platform we're doing this on, the splitting will be the same.
-				string cleanPath = path.Replace('\\', '/');
+				// Read the next path block.
+				string pathBlockDirectory = PathUtilities.GetDirectoryName(packagePaths.First());
 
-				// Split the path into the composing names
-				string[] pathParts = cleanPath.Split('/');
-
-				// We'll try to create nodes for each part.
-				for (int i = 0; i < pathParts.Length; ++i)
+				// Create nodes for all directories up the chain
+				IEnumerable<string> pathBlockChain = PathUtilities.GetDirectoryChain(pathBlockDirectory);
+				foreach (string parentDirectory in pathBlockChain)
 				{
-					bool isPartLastInPath = i == pathParts.Length - 1;
+					ConsumePath(packageName, package, parentDirectory);
+				}
 
-					// Each node is identified by its own name, and the name of its parent. Since we're mirroring a file
-					// system here, duplicate names under one parent are not allowed, but they are allowed globally.
-					// We'll acquire the identifiers for the new node and its parent for future use.
-					NodeIdentifier nodeIdentifier = new NodeIdentifier(packageName, string.Join("/", pathParts.Take(i + 1)));
-					NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
+				// Create file nodes for all files in that directory
+				List<string> completedPaths = new List<string>();
+				IEnumerable<string> pathBlockFiles = packagePaths.Where(p => PathUtilities.GetDirectoryName(p) == pathBlockDirectory);
+				foreach (string blockFile in pathBlockFiles)
+				{
+					ConsumePath(packageName, package, blockFile);
+					completedPaths.Add(blockFile);
+				}
 
-					// There's a good chance this node has already been encountered somewhere.
-					// If that is the case, we can skip it.
-					if (this.Nodes.ContainsKey(nodeIdentifier))
-					{
-						continue;
-					}
-
-					// If the part is the final part, then it is almost guaranteed to be a file - if not, a directory.
-					// Since listfiles do not support empty directories, we're not checking for extensions here. If
-					// a part is last, then it is by definition a file.
-					NodeType nodeType = isPartLastInPath ? NodeType.File : NodeType.Directory;
-
-					if (nodeType == NodeType.File)
-					{
-						MPQFileInfo fileInfo = package.GetFileInfo(cleanPath);
-						if (fileInfo == null)
-						{
-							nodeType |= NodeType.Nonexistent;
-						}
-						else if (fileInfo.IsDeleted)
-						{
-							nodeType |= NodeType.Deleted;
-						}
-					}
-
-					// We'll also store the type of file that's referenced for later use.
-					WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : GetFileType(pathParts[i]);
-
-					// -2 is used here to denote a missing but existing name that is to be filled in later.
-					Node node = new Node
-					{
-						Type = nodeType,
-						FileType = fileType,
-						NameOffset = -2,
-						ChildCount = 0,
-						ChildOffsets = new List<ulong>()
-					};
-
-					// Enter the created data into the transient registers
-					this.Nodes.Add(nodeIdentifier, node);
-					this.NodeChildren.Add(nodeIdentifier, new List<NodeIdentifier>());
-					this.NodeParents.Add(nodeIdentifier, parentIdentifier);
-
-					// Update the parent node with the new information
-					++this.Nodes[parentIdentifier].ChildCount;
-					this.NodeChildren[parentIdentifier].Add(nodeIdentifier);
-					AddTypeToParentChain(fileType, parentIdentifier);
-
-					// Append the node name (if it doesn't already exist) to the name list so we can build the name
-					// block later
-					if (!this.Names.Contains(pathParts[i]))
-					{
-						this.Names.Add(pathParts[i]);
-					}
-
-					// Now, we'll begin virtual node creation.
-					CreateOrUpdateVirtualNode(nodeIdentifier);
+				foreach (string completedPath in completedPaths)
+				{
+					packagePaths.Remove(completedPath);
 				}
 			}
+		}
+
+		protected virtual void ConsumePath(string packageName, IPackage package, string path)
+		{
+			bool isDirectory = path.EndsWith("\\");
+			string nodeName = PathUtilities.GetPathTargetName(path);
+
+			// Each node is identified by its own name, and the name of its parent. Since we're mirroring a file
+			// system here, duplicate names under one parent are not allowed, but they are allowed globally.
+			// We'll acquire the identifiers for the new node and its parent for future use.
+			NodeIdentifier nodeIdentifier = new NodeIdentifier(packageName, path);
+			NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
+
+			// There's a good chance this node has already been encountered somewhere.
+			// If that is the case, we can skip it.
+			if (this.Nodes.ContainsKey(nodeIdentifier))
+			{
+				return;
+			}
+
+			// If the part is the final part, then it is almost guaranteed to be a file - if not, a directory.
+			// Since listfiles do not support empty directories, we're not checking for extensions here. If
+			// a part is last, then it is by definition a file.
+			NodeType nodeType = isDirectory ? NodeType.Directory : NodeType.File;
+
+			if (nodeType == NodeType.File)
+			{
+				MPQFileInfo fileInfo = package.GetFileInfo(path);
+				if (fileInfo == null)
+				{
+					nodeType |= NodeType.Nonexistent;
+				}
+				else if (fileInfo.IsDeleted)
+				{
+					nodeType |= NodeType.Deleted;
+				}
+			}
+
+			// We'll also store the type of file that's referenced for later use.
+			WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : GetFileType(nodeName);
+
+			// -2 is used here to denote a missing but existing name that is to be filled in later.
+			Node node = new Node
+			{
+				Type = nodeType,
+				FileType = fileType,
+				NameOffset = -2,
+				ChildCount = 0,
+				ChildOffsets = new List<ulong>()
+			};
+
+			// Enter the created data into the transient registers
+			this.Nodes.Add(nodeIdentifier, node);
+			this.NodeChildren.Add(nodeIdentifier, new List<NodeIdentifier>());
+			this.NodeParents.Add(nodeIdentifier, parentIdentifier);
+
+			// Update the parent node with the new information
+			++this.Nodes[parentIdentifier].ChildCount;
+			this.NodeChildren[parentIdentifier].Add(nodeIdentifier);
+			AddTypeToParentChain(fileType, parentIdentifier);
+
+			// Append the node name (if it doesn't already exist) to the name list so we can build the name
+			// block later
+			if (!this.Names.Contains(nodeName))
+			{
+				this.Names.Add(nodeName);
+			}
+
+			// Now, we'll begin virtual node creation.
+			CreateOrUpdateVirtualNode(nodeIdentifier);
 		}
 
 		/// <summary>
@@ -208,10 +227,12 @@ namespace liblistfile.NodeTree
 
 				this.VirtualNodeHardNodes.Add(virtualNodeIdentifier, new List<NodeIdentifier>());
 
+				/*
 				if (!this.Names.Contains(virtualNodeIdentifier.GetNodeName()))
 				{
 					this.Names.Add(virtualNodeIdentifier.GetNodeName());
 				}
+				*/
 			}
 
 			// Update the existing virtual node with new information

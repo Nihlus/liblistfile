@@ -110,7 +110,7 @@ namespace liblistfile.NodeTree
 				throw new ArgumentNullException(nameof(nodeIdentifier));
 			}
 
-			return new NodeIdentifier(nodeIdentifier.Package, Path.GetDirectoryName(nodeIdentifier.Path)?.Replace('\\', '/'));
+			return new NodeIdentifier(nodeIdentifier.Package, Path.GetDirectoryName(nodeIdentifier.Path));
 		}
 
 		/// <summary>
@@ -125,10 +125,10 @@ namespace liblistfile.NodeTree
 		{
 			// Replace any instances of windows path separators with unix path separators to ensure that no matter
 			// what platform we're doing this on, the splitting will be the same.
-			string cleanPath = path.Replace('\\', '/');
+			string cleanPath = path.Replace('/', '\\');
 
 			// Split the path into the composing names
-			string[] pathParts = cleanPath.Split('/');
+			string[] pathParts = cleanPath.Split('\\');
 
 			// We'll try to create nodes for each part.
 			for (int i = 0; i < pathParts.Length; ++i)
@@ -138,7 +138,7 @@ namespace liblistfile.NodeTree
 				// Each node is identified by its own name, and the name of its parent. Since we're mirroring a file
 				// system here, duplicate names under one parent are not allowed, but they are allowed globally.
 				// We'll acquire the identifiers for the new node and its parent for future use.
-				NodeIdentifier nodeIdentifier = new NodeIdentifier("", string.Join("/", pathParts.Take(i + 1)));
+				NodeIdentifier nodeIdentifier = new NodeIdentifier("", string.Join("\\", pathParts.Take(i + 1)));
 				NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
 
 				// There's a good chance this node has already been encountered somewhere.
@@ -228,7 +228,7 @@ namespace liblistfile.NodeTree
 		/// <returns></returns>
 		public virtual void Build()
 		{
-			// 1: Buld nodes (done in ConsumePath)
+			// 1: Buld nodes (done in CreateNode)
 			// 2: Build name block
 
 			Dictionary<string, long> relativeNameOffsets = new Dictionary<string, long>();
@@ -471,6 +471,12 @@ namespace liblistfile.NodeTree
 				case "html":
 				{
 					return WarcraftFileType.HTML;
+				}
+				case "dylib":
+				case "dll":
+				case "exe":
+				{
+					return WarcraftFileType.Assembly;
 				}
 				default:
 				{

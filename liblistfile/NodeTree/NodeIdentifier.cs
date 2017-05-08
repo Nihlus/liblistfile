@@ -56,7 +56,7 @@ namespace liblistfile.NodeTree
 		/// Gets the name of the node.
 		/// </summary>
 		/// <returns></returns>
-		public string GetNodeName() => this.Path.Split('/').Last();
+		public string GetNodeName() => PathUtilities.GetPathTargetName(this.Path);
 
 		/// <summary>
 		/// Determines if this object is equal to another.
