@@ -21,7 +21,9 @@ namespace liblistfile
 				yield break;
 			}
 
-			string[] pathParts = path.Split('\\');
+			string parents = path.Substring(0, path.LastIndexOf('\\'));
+
+			string[] pathParts = parents.Split('\\').Where(x => x != "").ToArray();
 			for (int i = 0; i < pathParts.Length; ++i)
 			{
 				yield return pathParts.Take(i + 1).Aggregate((a, b) => a + '\\' + b) + '\\';
@@ -37,11 +39,11 @@ namespace liblistfile
 		{
 			try
 			{
-				return path.Substring(0, path.LastIndexOf('\\'));
+				return path.Substring(0, path.LastIndexOf('\\') + 1);
 			}
 			catch
 			{
-				return String.Empty;
+				return string.Empty;
 			}
 		}
 

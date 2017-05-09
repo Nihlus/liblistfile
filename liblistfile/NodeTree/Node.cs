@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Warcraft.Core;
@@ -40,11 +41,6 @@ namespace liblistfile.NodeTree
 	/// </summary>
 	public class Node : IBinarySerializable
 	{
-		/// <summary>
-		/// The base serialized size of the node, were it not to have any children.
-		/// </summary>
-		public const long BaseSize = (sizeof(uint) * 2) + (sizeof(long) * 2) + sizeof(ulong);
-
 		/// <summary>
 		/// The type of the node.
 		/// </summary>
@@ -95,9 +91,9 @@ namespace liblistfile.NodeTree
 		/// <param name="br"></param>
 		/// <param name="position"></param>
 		/// <returns></returns>
-		public static Node ReadNode(BinaryReader br, long position)
+		public static Node ReadNode(BinaryReader br, ulong position)
 		{
-			br.BaseStream.Position = position;
+			br.BaseStream.Position = (long)position;
 
 			Node outNode = new Node
 			{
@@ -127,12 +123,36 @@ namespace liblistfile.NodeTree
 		}
 
 		/// <summary>
+		/// Determines whether or not this node has children.
+		/// </summary>
+		/// <returns></returns>
+		public bool HasChildren()
+		{
+			return this.ChildCount > 0;
+		}
+
+		/// <summary>
 		/// Gets the total size of the node in serialized form.
 		/// </summary>
 		/// <returns>The number of bytes this node would occupy.</returns>
 		public long GetTotalSize()
 		{
-			return (long)(BaseSize + this.ChildCount * sizeof(ulong));
+			// Type, FileType, NameOffset, ParentOffset, ChildCount
+			ulong size = (sizeof(uint) * 2) + (sizeof(long) * 2) + sizeof(ulong);
+
+			// ChildOffsets
+			size += (this.ChildCount * sizeof(ulong));
+
+			if (this.Type.HasFlag(NodeType.Virtual))
+			{
+				// HardNodeCount
+				size += sizeof(ulong);
+
+				// HardNodeOffsets
+				size += this.HardNodeCount * sizeof(ulong);
+			}
+
+			return (long) size;
 		}
 
 		public byte[] Serialize()
@@ -144,8 +164,8 @@ namespace liblistfile.NodeTree
 				bw.Write((uint)this.FileType);
 				bw.Write(this.NameOffset);
 				bw.Write(this.ParentOffset);
-				bw.Write(this.ChildCount);
 
+				bw.Write(this.ChildCount);
 				foreach (ulong childOffset in this.ChildOffsets)
 				{
 					bw.Write(childOffset);
@@ -161,6 +181,40 @@ namespace liblistfile.NodeTree
 				}
 
 				return ms.ToArray();
+			}
+		}
+
+		public override bool Equals(object obj)
+		{
+			if (!(obj is Node))
+			{
+				return false;
+			}
+
+			Node other = (Node) obj;
+
+			return
+				this.Type == other.Type &&
+				this.FileType == other.FileType &&
+				this.NameOffset == other.NameOffset &&
+				this.ParentOffset == other.ParentOffset &&
+				this.ChildCount == other.ChildCount &&
+				this.HardNodeCount == other.HardNodeCount;
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				int hash = 17;
+
+				hash *= 23 + (int)this.Type;
+				hash *= 23 + (int) this.FileType;
+				hash *= 23 + (int)this.NameOffset;
+				hash *= 23 + (int)this.ChildCount;
+				hash *= 23 + (int)this.HardNodeCount;
+
+				return hash;
 			}
 		}
 	}

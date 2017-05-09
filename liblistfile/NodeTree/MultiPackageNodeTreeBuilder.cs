@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Warcraft.Core;
 using Warcraft.MPQ;
@@ -38,11 +37,12 @@ namespace liblistfile.NodeTree
 	public class MultiPackageNodeTreeBuilder : NodeTreeBuilder
 	{
 		private readonly Dictionary<NodeIdentifier, List<NodeIdentifier>> VirtualNodeHardNodes = new Dictionary<NodeIdentifier, List<NodeIdentifier>>();
+		private readonly ListfileDictionary ListDictionary;
+		private readonly bool OptimizeCasing;
 
 		/// <summary>
 		/// Creates a builder for a multi-package node tree.
 		/// </summary>
-		/// <param name="packages"></param>
 		public MultiPackageNodeTreeBuilder() : base()
 		{
 			Node packagesFolderNode = new Node
@@ -71,15 +71,10 @@ namespace liblistfile.NodeTree
 			}
 		}
 
-		public MultiPackageNodeTreeBuilder(IEnumerable<Tuple<string, IPackage>> packages) : this()
+		public MultiPackageNodeTreeBuilder(ListfileDictionary dictionary) : this()
 		{
-			foreach (var packageInfo in packages)
-			{
-				string packageName = packageInfo.Item1;
-				IPackage package = packageInfo.Item2;
-
-				ConsumePackage(packageName, package);
-			}
+			this.ListDictionary = dictionary;
+			this.OptimizeCasing = true;
 		}
 
 		/// <summary>
@@ -102,7 +97,14 @@ namespace liblistfile.NodeTree
 				IEnumerable<string> pathBlockChain = PathUtilities.GetDirectoryChain(pathBlockDirectory);
 				foreach (string parentDirectory in pathBlockChain)
 				{
-					ConsumePath(packageName, package, parentDirectory);
+					string path = parentDirectory;
+
+					if (this.OptimizeCasing)
+					{
+						path = this.ListDictionary.OptimizePath(parentDirectory);
+					}
+
+					ConsumePath(packageName, package, path);
 				}
 
 				// Create file nodes for all files in that directory
@@ -110,7 +112,14 @@ namespace liblistfile.NodeTree
 				IEnumerable<string> pathBlockFiles = packagePaths.Where(p => PathUtilities.GetDirectoryName(p) == pathBlockDirectory);
 				foreach (string blockFile in pathBlockFiles)
 				{
-					ConsumePath(packageName, package, blockFile);
+					string path = blockFile;
+
+					if (this.OptimizeCasing)
+					{
+						path = this.ListDictionary.OptimizePath(blockFile);
+					}
+
+					ConsumePath(packageName, package, path);
 					completedPaths.Add(blockFile);
 				}
 
@@ -121,6 +130,12 @@ namespace liblistfile.NodeTree
 			}
 		}
 
+		/// <summary>
+		/// Consumes a single path, creating a single node for it and updating the paired virtual node.
+		/// </summary>
+		/// <param name="packageName"></param>
+		/// <param name="package"></param>
+		/// <param name="path"></param>
 		protected virtual void ConsumePath(string packageName, IPackage package, string path)
 		{
 			bool isDirectory = path.EndsWith("\\");
@@ -226,13 +241,6 @@ namespace liblistfile.NodeTree
 				this.NodeChildren[virtualParentIdentifier].Add(virtualNodeIdentifier);
 
 				this.VirtualNodeHardNodes.Add(virtualNodeIdentifier, new List<NodeIdentifier>());
-
-				/*
-				if (!this.Names.Contains(virtualNodeIdentifier.GetNodeName()))
-				{
-					this.Names.Add(virtualNodeIdentifier.GetNodeName());
-				}
-				*/
 			}
 
 			// Update the existing virtual node with new information
@@ -282,13 +290,13 @@ namespace liblistfile.NodeTree
 			// 4.4: Set virtual node information
 			foreach (var node in this.Nodes)
 			{
-				// 4.2 Set child offsets
+				// 4.2 Set hard node offsets
 				if (node.Value.Type.HasFlag(NodeType.Virtual))
 				{
 					var hardNodeList = this.VirtualNodeHardNodes[node.Key];
 					foreach (var hardIdentifier in hardNodeList)
 					{
-						node.Value.ChildOffsets.Add((ulong)this.AbsoluteNodeOffsets[hardIdentifier]);
+						node.Value.HardNodeOffsets.Add((ulong)this.AbsoluteNodeOffsets[hardIdentifier]);
 					}
 				}
 			}

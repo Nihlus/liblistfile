@@ -309,9 +309,8 @@ namespace liblistfile
 		/// </summary>
 		/// <returns>The optimized list.</returns>
 		/// <param name="unoptimizedList">Unoptimized list.</param>
-		public List<string> OptimizeList(IEnumerable<string> unoptimizedList)
+		public IEnumerable<string> OptimizeList(IEnumerable<string> unoptimizedList)
 		{
-			List<string> optimizedList = new List<string>();
 			foreach (string path in unoptimizedList)
 			{
 				if (string.IsNullOrEmpty(path))
@@ -319,29 +318,42 @@ namespace liblistfile
 					continue;
 				}
 
-				StringBuilder sb = new StringBuilder();
+				yield return OptimizePath(path);
+			}
+		}
 
-				string[] parts = path.Split('\\');
-				for (int i = 0; i < parts.Length; ++i)
+		/// <summary>
+		/// Optimizes the provided path using the loaded dictionary.
+		/// </summary>
+		/// <param name="path"></param>
+		/// <returns></returns>
+		public string OptimizePath(string path)
+		{
+			StringBuilder sb = new StringBuilder();
+
+			string[] parts = path.Split('\\');
+			for (int i = 0; i < parts.Length; ++i)
+			{
+				if (string.IsNullOrEmpty(parts[i]))
 				{
-					string extension = Path.GetExtension(parts[i]).ToLowerInvariant();
-					sb.Append(GetTermEntry(Path.GetFileNameWithoutExtension(parts[i])).Term);
-
-					if (!string.IsNullOrEmpty(extension))
-					{
-						sb.Append(extension);
-					}
-
-					if (i < parts.Length - 1)
-					{
-						sb.Append("\\");
-					}
+					continue;
 				}
 
-				optimizedList.Add(sb.ToString());
+				string extension = Path.GetExtension(parts[i]).ToLowerInvariant();
+				sb.Append(GetTermEntry(Path.GetFileNameWithoutExtension(parts[i])).Term);
+
+				if (!string.IsNullOrEmpty(extension))
+				{
+					sb.Append(extension);
+				}
+
+				if (i < parts.Length - 1)
+				{
+					sb.Append("\\");
+				}
 			}
 
-			return optimizedList;
+			return sb.ToString();
 		}
 
 		/// <summary>
@@ -355,20 +367,21 @@ namespace liblistfile
 
 			if (string.IsNullOrEmpty(term))
 			{
-				return words;
+				yield break;
 			}
 
 			MatchCollection matches = Regex.Matches(Path.GetFileNameWithoutExtension(term), "([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)");
 
 			foreach (Match match in matches)
 			{
-				if (!words.Contains(match.Value))
+				if (words.Contains(match.Value))
 				{
-					words.Add(match.Value);
+					continue;
 				}
-			}
 
-			return words;
+				words.Add(match.Value);
+				yield return match.Value;
+			}
 		}
 
 		/// <summary>

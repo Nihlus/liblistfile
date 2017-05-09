@@ -21,8 +21,11 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using liblistfile.NodeTree;
+using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
 namespace liblistfile
@@ -42,7 +45,6 @@ namespace liblistfile
 		private long NodesOffset;
 		private long NamesOffset;
 		private long SortListsOffset;
-
 
 		/// <summary>
 		/// A stream containing the data of the tree.
@@ -64,10 +66,13 @@ namespace liblistfile
 					return this.InternalRoot;
 				}
 
-				this.InternalRoot = Node.ReadNode(this.TreeReader, this.NodesOffset);
+				this.InternalRoot = Node.ReadNode(this.TreeReader, (ulong)this.NodesOffset);
 				return this.InternalRoot;
 			}
 		}
+
+		private readonly Dictionary<ulong, Node> CachedNodes = new Dictionary<ulong, Node>();
+		private readonly Dictionary<Node, ulong> CachedOffsets = new Dictionary<Node, ulong>();
 
 		/// <summary>
 		/// Creates a new <see cref="OptimizedNodeTree"/> from a data stream.
@@ -97,6 +102,60 @@ namespace liblistfile
 			this.NodesOffset = this.TreeReader.ReadInt64();
 			this.NamesOffset = this.TreeReader.ReadInt64();
 			this.SortListsOffset = this.TreeReader.ReadInt64();
+		}
+
+		/// <summary>
+		/// Gets a node from the specified offset in the tree.
+		/// </summary>
+		/// <param name="offset"></param>
+		/// <returns></returns>
+		public Node GetNode(ulong offset)
+		{
+			if (offset < (ulong)this.NodesOffset)
+			{
+				return null;
+			}
+
+			if (this.CachedNodes.ContainsKey(offset))
+			{
+				return this.CachedNodes[offset];
+			}
+
+			Node newNode = Node.ReadNode(this.TreeReader, offset);
+			if (newNode == null)
+			{
+				return null;
+			}
+
+			this.CachedNodes.Add(offset, newNode);
+			this.CachedOffsets.Add(newNode, offset);
+			return newNode;
+		}
+
+		/// <summary>
+		/// Gets the absolute offset of a given node.
+		/// </summary>
+		/// <param name="node"></param>
+		/// <returns></returns>
+		public ulong GetNodeOffset(Node node)
+		{
+			if (this.CachedOffsets.ContainsKey(node))
+			{
+				return this.CachedOffsets[node];
+			}
+
+			return 0;
+		}
+
+		public string GetNodeName(Node node)
+		{
+			if (node.NameOffset < 0)
+			{
+				return string.Empty;
+			}
+
+			this.TreeReader.BaseStream.Position = node.NameOffset;
+			return this.TreeReader.ReadNullTerminatedString();
 		}
 
 		/// <summary>

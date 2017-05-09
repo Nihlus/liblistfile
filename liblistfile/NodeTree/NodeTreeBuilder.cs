@@ -110,7 +110,7 @@ namespace liblistfile.NodeTree
 				throw new ArgumentNullException(nameof(nodeIdentifier));
 			}
 
-			return new NodeIdentifier(nodeIdentifier.Package, Path.GetDirectoryName(nodeIdentifier.Path));
+			return new NodeIdentifier(nodeIdentifier.Package, PathUtilities.GetDirectoryName(nodeIdentifier.Path.TrimEnd('\\')));
 		}
 
 		/// <summary>
@@ -118,7 +118,7 @@ namespace liblistfile.NodeTree
 		/// internal registers.
 		/// </summary>
 		/// <param name="path">
-		/// The path to consume. Both \ and / characters are accepted, and will be converted to /
+		/// The path to consume. Both \ and / characters are accepted, and will be converted to \
 		/// internally. The path is split into components by this character.
 		/// </param>
 		protected virtual void ConsumePath(string path)
