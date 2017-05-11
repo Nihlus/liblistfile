@@ -60,7 +60,9 @@
     <Folder Include="Score\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Dictionary\dictionary.dic" />
+    <Content Include="Dictionary\dictionary.dic">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

@@ -173,7 +173,7 @@ namespace liblistfile.NodeTree
 			}
 
 			// We'll also store the type of file that's referenced for later use.
-			WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : GetFileType(nodeName);
+			WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : FileInfoUtilities.GetFileType(nodeName);
 
 			// -2 is used here to denote a missing but existing name that is to be filled in later.
 			Node node = new Node
@@ -260,7 +260,7 @@ namespace liblistfile.NodeTree
 		{
 			Node metaPackageNode = new Node
 			{
-				Type = NodeType.Meta,
+				Type = NodeType.Meta | NodeType.Package,
 				NameOffset = -3,
 				ChildCount = 0,
 				ChildOffsets = new List<ulong>()

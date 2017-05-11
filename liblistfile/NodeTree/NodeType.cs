@@ -60,6 +60,11 @@ namespace liblistfile.NodeTree
 		/// <summary>
 		/// The file the node maps to never existed, but it may have been referred to by something else.
 		/// </summary>
-		Nonexistent				= 0x20
+		Nonexistent				= 0x20,
+
+		/// <summary>
+		/// The node is a package root node.
+		/// </summary>
+		Package					= 0x40
 	}
 }

@@ -147,6 +147,11 @@ namespace liblistfile
 			return 0;
 		}
 
+		/// <summary>
+		/// Gets the name of a given node.
+		/// </summary>
+		/// <param name="node"></param>
+		/// <returns></returns>
 		public string GetNodeName(Node node)
 		{
 			if (node.NameOffset < 0)
