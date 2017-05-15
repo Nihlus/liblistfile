@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Warcraft.Core;
 using Warcraft.MPQ;
 using Warcraft.MPQ.FileInfo;
@@ -75,6 +76,16 @@ namespace liblistfile.NodeTree
 		{
 			this.ListDictionary = dictionary;
 			this.OptimizeCasing = true;
+		}
+
+		/// <summary>
+		/// Consumes a package asynchronously, creating hard nodes for its contents, and mapping them to virtual nodes.
+		/// </summary>
+		/// <param name="packageName">The name of the package.</param>
+		/// <param name="package">The package.</param>
+		public async Task ConsumePackageAsync(string packageName, IPackage package)
+		{
+			await Task.Run(() => ConsumePackage(packageName, package));
 		}
 
 		/// <summary>
