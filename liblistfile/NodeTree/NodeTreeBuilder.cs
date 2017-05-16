@@ -207,7 +207,7 @@ namespace liblistfile.NodeTree
 
 				currentNode.FileType |= fileType;
 
-				if (currentNode .ParentOffset != -1)
+				if (currentNode.ParentOffset != -1)
 				{
 					currentParentIdentifier = this.NodeParents[currentParentIdentifier];
 				}
@@ -320,7 +320,7 @@ namespace liblistfile.NodeTree
 		/// forms a tree from it.
 		/// </summary>
 		/// <returns></returns>
-		public OptimizedNodeTree CreateTree()
+		public byte[] CreateTree()
 		{
 			MemoryStream outputStream = new MemoryStream();
 			using (BinaryWriter bw = new BinaryWriter(outputStream, Encoding.Default, true))
@@ -346,7 +346,7 @@ namespace liblistfile.NodeTree
 				outputStream.Flush();
 			}
 
-			return new OptimizedNodeTree(outputStream);
+			return outputStream.ToArray();
 		}
 	}
 }

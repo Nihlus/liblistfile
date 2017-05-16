@@ -23,10 +23,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using liblistfile.NodeTree;
 using Warcraft.Core.Extensions;
-using Warcraft.Core.Interfaces;
 
 namespace liblistfile
 {
@@ -39,22 +37,14 @@ namespace liblistfile
 	/// char[] Names
 	///
 	/// </summary>
-	public class OptimizedNodeTree : IDisposable, IBinarySerializable
+	public class OptimizedNodeTree
 	{
-		public const uint Version = 1;
+		public const uint Version = 2;
 		private long NodesOffset;
 		private long NamesOffset;
 		private long SortListsOffset;
 
-		/// <summary>
-		/// A stream containing the data of the tree.
-		/// </summary>
-		private readonly Stream TreeStream;
-
-		/// <summary>
-		/// A <see cref="BinaryReader"/> bound to the data contained in the tree.
-		/// </summary>
-		public readonly BinaryReader TreeReader;
+		private string TreeLocation;
 
 		private Node InternalRoot;
 		public Node Root
@@ -66,7 +56,7 @@ namespace liblistfile
 					return this.InternalRoot;
 				}
 
-				this.InternalRoot = Node.ReadNode(this.TreeReader, (ulong)this.NodesOffset);
+				this.InternalRoot = GetNode((ulong)this.NodesOffset);
 				return this.InternalRoot;
 			}
 		}
@@ -77,31 +67,35 @@ namespace liblistfile
 		/// <summary>
 		/// Creates a new <see cref="OptimizedNodeTree"/> from a data stream.
 		/// </summary>
-		/// <param name="dataStream"></param>
+		/// <param name="treeLocation"></param>
 		/// <exception cref="ArgumentException"></exception>
-		public OptimizedNodeTree(Stream dataStream)
+		public OptimizedNodeTree(string treeLocation)
 		{
-			if (!dataStream.CanSeek)
+			if (!File.Exists(treeLocation))
 			{
-				throw new ArgumentException("Unseekable streams are not supported.", nameof(dataStream));
+				throw new ArgumentException("The file must exist.", nameof(treeLocation));
 			}
 
-			this.TreeStream = dataStream;
-			this.TreeReader = new BinaryReader(this.TreeStream);
+			this.TreeLocation = treeLocation;
 
-			// Reset the position, in case the stream was recently created.
-			this.TreeReader.BaseStream.Position = 0;
-
-			uint storedVersion = this.TreeReader.ReadUInt32();
-			if (storedVersion != Version)
+			using (FileStream fs = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read))
+			using (BinaryReader br = new BinaryReader(fs))
 			{
-				// Do whatever functionality switching is needed
-			}
+				// Reset the position, in case the stream was recently created.
+				br.BaseStream.Position = 0;
 
-			// Latest implementation
-			this.NodesOffset = this.TreeReader.ReadInt64();
-			this.NamesOffset = this.TreeReader.ReadInt64();
-			this.SortListsOffset = this.TreeReader.ReadInt64();
+				uint storedVersion = br.ReadUInt32();
+				if (storedVersion != Version)
+				{
+					// Do whatever functionality switching is needed
+					throw new ArgumentException("Unsupported node tree version.", nameof(treeLocation));
+				}
+
+				// Latest implementation
+				this.NodesOffset = br.ReadInt64();
+				this.NamesOffset = br.ReadInt64();
+				this.SortListsOffset = br.ReadInt64();
+			}
 		}
 
 		/// <summary>
@@ -121,15 +115,22 @@ namespace liblistfile
 				return this.CachedNodes[offset];
 			}
 
-			Node newNode = Node.ReadNode(this.TreeReader, offset);
-			if (newNode == null)
+			// Nodes may be read from multiple threads at any time due to async/await patterns, so we
+			// create a new stream each time a node is read.
+			using (FileStream fs = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read))
+			using (BinaryReader br = new BinaryReader(fs))
 			{
-				return null;
-			}
+				Node newNode = Node.ReadNode(br, offset);
 
-			this.CachedNodes.Add(offset, newNode);
-			this.CachedOffsets.Add(newNode, offset);
-			return newNode;
+				if (newNode == null)
+				{
+					return null;
+				}
+
+				this.CachedNodes.Add(offset, newNode);
+				this.CachedOffsets.Add(newNode, offset);
+				return newNode;
+			}
 		}
 
 		/// <summary>
@@ -159,30 +160,11 @@ namespace liblistfile
 				return string.Empty;
 			}
 
-			this.TreeReader.BaseStream.Position = node.NameOffset;
-			return this.TreeReader.ReadNullTerminatedString();
-		}
-
-		/// <summary>
-		/// Disposes the node tree, releasing the underlying data.
-		/// </summary>
-		public void Dispose()
-		{
-			this.TreeStream?.Dispose();
-			this.TreeReader?.Dispose();
-		}
-
-		/// <summary>
-		/// Serializes the current object into a byte array.
-		/// </summary>
-		public byte[] Serialize()
-		{
-			using (MemoryStream ms = new MemoryStream())
+			using (FileStream fs = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read))
+			using (BinaryReader br = new BinaryReader(fs))
 			{
-				this.TreeStream.Position = 0;
-				this.TreeStream.CopyTo(ms);
-
-				return ms.ToArray();
+				br.BaseStream.Position = node.NameOffset;
+				return br.ReadNullTerminatedString();
 			}
 		}
 	}

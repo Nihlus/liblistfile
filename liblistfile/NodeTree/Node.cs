@@ -93,17 +93,17 @@ namespace liblistfile.NodeTree
 		/// <returns></returns>
 		public static Node ReadNode(BinaryReader br, ulong position)
 		{
-			br.BaseStream.Position = (long)position;
+			br.BaseStream.Seek((long) position, SeekOrigin.Begin);
 
-			Node outNode = new Node
-			{
-				Type = (NodeType) br.ReadUInt32(),
-				FileType = (WarcraftFileType)br.ReadUInt32(),
-				NameOffset = br.ReadInt64(),
-				ParentOffset = br.ReadInt64(),
-				ChildCount = br.ReadUInt64(),
-				ChildOffsets = new List<ulong>()
-			};
+			//br.BaseStream.Position = (long)position;
+
+			Node outNode = new Node();
+			outNode.Type = (NodeType) br.ReadUInt32();
+			outNode.FileType = (WarcraftFileType)br.ReadUInt64();
+			outNode.NameOffset = br.ReadInt64();
+			outNode.ParentOffset = br.ReadInt64();
+			outNode.ChildCount = br.ReadUInt64();
+			outNode.ChildOffsets = new List<ulong>();
 
 			for (ulong i = 0; i < outNode.ChildCount; ++i)
 			{
@@ -138,7 +138,7 @@ namespace liblistfile.NodeTree
 		public long GetTotalSize()
 		{
 			// Type, FileType, NameOffset, ParentOffset, ChildCount
-			ulong size = (sizeof(uint) * 2) + (sizeof(long) * 2) + sizeof(ulong);
+			ulong size = sizeof(uint) + sizeof(ulong) + (sizeof(long) * 2) + sizeof(ulong);
 
 			// ChildOffsets
 			size += (this.ChildCount * sizeof(ulong));
@@ -161,7 +161,7 @@ namespace liblistfile.NodeTree
 			using (BinaryWriter bw = new BinaryWriter(ms))
 			{
 				bw.Write((uint)this.Type);
-				bw.Write((uint)this.FileType);
+				bw.Write((ulong)this.FileType);
 				bw.Write(this.NameOffset);
 				bw.Write(this.ParentOffset);
 
