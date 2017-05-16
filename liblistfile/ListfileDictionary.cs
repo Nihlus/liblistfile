@@ -340,7 +340,14 @@ namespace liblistfile
 				}
 
 				string extension = Path.GetExtension(parts[i]).ToLowerInvariant();
-				sb.Append(GetTermEntry(Path.GetFileNameWithoutExtension(parts[i])).Term);
+				string potentialTerm = Path.GetFileNameWithoutExtension(parts[i]);
+
+				if (!ContainsTerm(potentialTerm))
+				{
+					UpdateTermEntry(potentialTerm);
+				}
+
+				sb.Append(GetTermEntry(potentialTerm).Term);
 
 				if (!string.IsNullOrEmpty(extension))
 				{
