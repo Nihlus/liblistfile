@@ -28,6 +28,8 @@ using System.Text.RegularExpressions;
 using Ionic.BZip2;
 using liblistfile.Score;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
@@ -145,77 +147,106 @@ namespace liblistfile
 		{
 			using (MemoryStream ms = new MemoryStream(data))
 			{
-				using (BinaryReader br = new BinaryReader(ms))
+				LoadFromStream(ms);
+			}
+		}
+
+		/// <summary>
+		/// Asynchronously loads dictionary data from the given data stream.
+		/// </summary>
+		/// <param name="dataStream"></param>
+		/// <param name="ct"></param>
+		/// <exception cref="InvalidDataException"></exception>
+		public async Task LoadFromStreamAsync(Stream dataStream, CancellationToken ct = new CancellationToken())
+		{
+			await Task.Run(() => LoadFromStream(dataStream, ct), ct);
+		}
+
+		/// <summary>
+		/// Loads dictionary data from the given data stream.
+		/// </summary>
+		/// <param name="dataStream"></param>
+		/// <param name="ct"></param>
+		/// <exception cref="InvalidDataException"></exception>
+		public void LoadFromStream(Stream dataStream, CancellationToken ct = new CancellationToken())
+		{
+			using (BinaryReader br = new BinaryReader(dataStream))
+			{
+				string dataSignature = new string(br.ReadChars(4));
+				if (dataSignature != Signature)
 				{
-					string dataSignature = new string(br.ReadChars(4));
-					if (dataSignature != Signature)
-					{
-						throw new InvalidDataException("The input data did not begin with a dictionary signature.");
-					}
-					uint dataVersion = br.ReadUInt32();
+					throw new InvalidDataException("The input data did not begin with a dictionary signature.");
+				}
+				uint dataVersion = br.ReadUInt32();
 
-					if (dataVersion < Version)
+				if (dataVersion < Version)
+				{
+					if (dataVersion < 2)
 					{
-						if (dataVersion < 2)
-						{
-							// Version 2 started compressing the dictionary block
-							ulong recordCount = br.ReadUInt64();
-							for (ulong i = 0; i < recordCount; ++i)
-							{
-								ListfileDictionaryEntry entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
-								this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
-							}
-						}
-
-						// Perform any extra actions required
-						if (dataVersion == 0)
-						{
-							// From version 0 and up, the score calculation was altered. Recalculate all scores.
-							foreach (KeyValuePair<string, ListfileDictionaryEntry> entry in this.DictionaryEntries)
-							{
-								entry.Value.RecalculateScore();
-							}
-						}
-					}
-					else
-					{
-						// The most current implementation
-
+						// Version 2 started compressing the dictionary block
 						ulong recordCount = br.ReadUInt64();
-						ulong recordBlockSize = br.ReadUInt64();
-
-						using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
+						for (ulong i = 0; i < recordCount; ++i)
 						{
-							using (BZip2InputStream bz = new BZip2InputStream(compressedData))
-							{
-								using (MemoryStream decompressedData = new MemoryStream())
-								{
-									// Decompress the data into the stream
-									bz.CopyTo(decompressedData);
+							ct.ThrowIfCancellationRequested();
 
-									// Read the dictionary elements
-									decompressedData.Position = 0;
-									using (BinaryReader zr = new BinaryReader(decompressedData))
+							ListfileDictionaryEntry entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
+							this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
+						}
+					}
+
+					// Perform any extra actions required
+					if (dataVersion == 0)
+					{
+						// From version 0 and up, the score calculation was altered. Recalculate all scores.
+						foreach (KeyValuePair<string, ListfileDictionaryEntry> entry in this.DictionaryEntries)
+						{
+							ct.ThrowIfCancellationRequested();
+
+							entry.Value.RecalculateScore();
+						}
+					}
+				}
+				else
+				{
+					// The most current implementation
+					ulong recordCount = br.ReadUInt64();
+					ulong recordBlockSize = br.ReadUInt64();
+
+					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
+					{
+						using (BZip2InputStream bz = new BZip2InputStream(compressedData))
+						{
+							using (MemoryStream decompressedData = new MemoryStream())
+							{
+								// Decompress the data into the stream
+								bz.CopyTo(decompressedData);
+
+								// Read the dictionary elements
+								decompressedData.Position = 0;
+								using (BinaryReader zr = new BinaryReader(decompressedData))
+								{
+									for (ulong i = 0; i < recordCount; ++i)
 									{
-										for (ulong i = 0; i < recordCount; ++i)
-										{
-											ListfileDictionaryEntry entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
-											this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
-										}
+										ct.ThrowIfCancellationRequested();
+
+										ListfileDictionaryEntry entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
+										this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
 									}
 								}
 							}
 						}
 					}
-
-					// Extract all good words from high-scoring terms
-					foreach (KeyValuePair<string, ListfileDictionaryEntry> highScoreEntryPair in this.HighScoreEntries)
-					{
-						AddNewTermWords(highScoreEntryPair.Value.Term, false);
-					}
-
-					this.DictionaryWords.Sort(CompareWordsByLength);
 				}
+
+				// Extract all good words from high-scoring terms
+				foreach (KeyValuePair<string, ListfileDictionaryEntry> highScoreEntryPair in this.HighScoreEntries)
+				{
+					ct.ThrowIfCancellationRequested();
+
+					AddNewTermWords(highScoreEntryPair.Value.Term, false);
+				}
+
+				this.DictionaryWords.Sort(CompareWordsByLength);
 			}
 		}
 

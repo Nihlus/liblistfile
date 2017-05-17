@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Warcraft.Core;
 using Warcraft.MPQ;
@@ -83,9 +84,10 @@ namespace liblistfile.NodeTree
 		/// </summary>
 		/// <param name="packageName">The name of the package.</param>
 		/// <param name="package">The package.</param>
-		public async Task ConsumePackageAsync(string packageName, IPackage package)
+		/// <param name="ct">A cancellation token used when asynchronously consuming packages.</param>
+		public async Task ConsumePackageAsync(string packageName, IPackage package, CancellationToken ct = new CancellationToken())
 		{
-			await Task.Run(() => ConsumePackage(packageName, package));
+			await Task.Run(() => ConsumePackage(packageName, package, ct), ct);
 		}
 
 		/// <summary>
@@ -93,7 +95,8 @@ namespace liblistfile.NodeTree
 		/// </summary>
 		/// <param name="packageName">The name of the package.</param>
 		/// <param name="package">The package.</param>
-		public void ConsumePackage(string packageName, IPackage package)
+		/// <param name="ct">A cancellation token used when asynchronously consuming packages.</param>
+		public void ConsumePackage(string packageName, IPackage package, CancellationToken ct = new CancellationToken())
 		{
 			CreateMetaPackageNode(packageName);
 			List<string> packagePaths = package.GetFileList();
@@ -101,6 +104,8 @@ namespace liblistfile.NodeTree
 			// We'll be progressively removing entries we're done with. Once they've all been consumed, we'll be done.
 			while (packagePaths.Count > 0)
 			{
+				ct.ThrowIfCancellationRequested();
+
 				// Read the next path block.
 				string pathBlockDirectory = PathUtilities.GetDirectoryName(packagePaths.First());
 
@@ -108,6 +113,8 @@ namespace liblistfile.NodeTree
 				IEnumerable<string> pathBlockChain = PathUtilities.GetDirectoryChain(pathBlockDirectory);
 				foreach (string parentDirectory in pathBlockChain)
 				{
+					ct.ThrowIfCancellationRequested();
+
 					string path = parentDirectory;
 
 					if (this.OptimizeCasing)
@@ -123,6 +130,8 @@ namespace liblistfile.NodeTree
 				IEnumerable<string> pathBlockFiles = packagePaths.Where(p => PathUtilities.GetDirectoryName(p) == pathBlockDirectory);
 				foreach (string blockFile in pathBlockFiles)
 				{
+					ct.ThrowIfCancellationRequested();
+
 					string path = blockFile;
 
 					if (this.OptimizeCasing)
