@@ -105,6 +105,11 @@ namespace liblistfile.NodeTree
 			CreateMetaPackageNode(packageName);
 			List<string> packagePaths = package.GetFileList();
 
+			if (packagePaths == null)
+			{
+				return;
+			}
+
 			// We'll be progressively removing entries we're done with. Once they've all been consumed, we'll be done.
 			while (packagePaths.Count > 0)
 			{
