@@ -46,17 +46,45 @@ namespace liblistfile.NodeTree
 			Internal transient register data
 		*/
 
+		/// <summary>
+		/// The root node of the tree that's being built.
+		/// </summary>
 		protected readonly Node RootNode;
 
+		/// <summary>
+		/// A list of all node names which appear in the tree.
+		/// </summary>
 		protected readonly List<string> Names = new List<string>();
+
+		/// <summary>
+		/// A mapping between folder-unique <see cref="NodeIdentifier"/> objects and nodes.
+		/// </summary>
 		protected readonly Dictionary<NodeIdentifier, Node> Nodes = new Dictionary<NodeIdentifier, Node>();
+
+		/// <summary>
+		/// A mapping between folder-unique <see cref="NodeIdentifier"/> objects and lists of which identifiers are
+		/// child nodes to that identifier.
+		/// </summary>
 		protected readonly Dictionary<NodeIdentifier, List<NodeIdentifier>> NodeChildren = new Dictionary<NodeIdentifier, List<NodeIdentifier>>();
+
+		/// <summary>
+		/// A mapping between folder-unique <see cref="NodeIdentifier"/> objects and identifiers which are their parent
+		/// identifiers.
+		/// </summary>
 		protected readonly Dictionary<NodeIdentifier, NodeIdentifier> NodeParents = new Dictionary<NodeIdentifier, NodeIdentifier>();
 
 		/*
 			Internal building register data
 		*/
+
+		/// <summary>
+		/// A mapping of names to their final absolute offsets.
+		/// </summary>
 		protected readonly Dictionary<string, long> AbsoluteNameOffsets = new Dictionary<string, long>();
+
+		/// <summary>
+		/// A mapping of <see cref="NodeIdentifier"/> objects to the final absolute offsets of their respective nodes.
+		/// </summary>
 		protected readonly Dictionary<NodeIdentifier, long> AbsoluteNodeOffsets = new Dictionary<NodeIdentifier, long>();
 
 		private byte[] NameBlock;
@@ -65,6 +93,9 @@ namespace liblistfile.NodeTree
 		private long NameBlockOffset;
 		private long SortingBlockOffset;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="NodeTreeBuilder"/> class.
+		/// </summary>
 		public NodeTreeBuilder()
 		{
 			NodeIdentifier rootIdentifier = new NodeIdentifier("", "");
@@ -83,6 +114,11 @@ namespace liblistfile.NodeTree
 			this.NodeChildren[rootIdentifier] = new List<NodeIdentifier>();
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="NodeTreeBuilder"/> class and consumes
+		/// all paths provided.
+		/// </summary>
+		/// <param name="paths"></param>
 		public NodeTreeBuilder(IEnumerable<string> paths) : this()
 		{
 			// Begin forming nodes for the given paths.
@@ -92,6 +128,10 @@ namespace liblistfile.NodeTree
 			}
 		}
 
+		/// <summary>
+		/// Adds a path to the tree.
+		/// </summary>
+		/// <param name="path"></param>
 		public void AddPath(string path)
 		{
 			ConsumePath(path);
@@ -340,7 +380,7 @@ namespace liblistfile.NodeTree
 				// 5.3 Write name block
 				bw.Write(this.NameBlock);
 
-				// 5.4 TODO: Write sorting lists
+				// 5.4 Write sorting block (unused at the moment)
 
 				bw.Flush();
 				outputStream.Flush();

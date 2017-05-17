@@ -39,14 +39,20 @@ namespace liblistfile
 	/// </summary>
 	public class OptimizedNodeTree
 	{
+		/// <summary>
+		/// The current version of the node tree format.
+		/// </summary>
 		public const uint Version = 2;
-		private long NodesOffset;
-		private long NamesOffset;
-		private long SortListsOffset;
 
-		private string TreeLocation;
+		private readonly long NodesOffset;
+		private readonly long NamesOffset;
+		private readonly long SortListsOffset;
 
-		private Node InternalRoot;
+		private readonly string TreeLocation;
+
+		/// <summary>
+		/// The absolute root node of the tree.
+		/// </summary>
 		public Node Root
 		{
 			get
@@ -60,6 +66,7 @@ namespace liblistfile
 				return this.InternalRoot;
 			}
 		}
+		private Node InternalRoot;
 
 		private readonly Dictionary<ulong, Node> CachedNodes = new Dictionary<ulong, Node>();
 		private readonly Dictionary<Node, ulong> CachedOffsets = new Dictionary<Node, ulong>();

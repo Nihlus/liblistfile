@@ -73,6 +73,10 @@ namespace liblistfile.NodeTree
 			}
 		}
 
+		/// <summary>
+		/// Creates a new <see cref="MultiPackageNodeTreeBuilder"/> using the specified dictionary.
+		/// </summary>
+		/// <param name="dictionary"></param>
 		public MultiPackageNodeTreeBuilder(ListfileDictionary dictionary) : this()
 		{
 			this.ListDictionary = dictionary;
@@ -303,6 +307,11 @@ namespace liblistfile.NodeTree
 			}
 		}
 
+		/// <summary>
+		/// Builds the gathered data into data ready to be written into a tree object from the consumed paths.
+		/// This method can be called as many times as needed, if more paths are added.
+		/// </summary>
+		/// <returns></returns>
 		public override void Build()
 		{
 			base.Build();
@@ -332,6 +341,15 @@ namespace liblistfile.NodeTree
 			return new NodeIdentifier("", nodeIdentifier.Path);
 		}
 
+		/// <summary>
+		/// Consumes a given path, creating nodes for its components and adding them (and any relevant data) to the
+		/// internal registers. This is not hooked up in the <see cref="MultiPackageNodeTreeBuilder"/> and will throw
+		/// an exception.
+		/// </summary>
+		/// <param name="path">
+		/// The path to consume. Both \ and / characters are accepted, and will be converted to \
+		/// internally. The path is split into components by this character.
+		/// </param>
 		protected override void ConsumePath(string path)
 		{
 			throw new InvalidOperationException("Individual paths may not be consumed when generating a multipackage tree. Use ConsumePackage(string, IPackage) instead.");

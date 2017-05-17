@@ -95,15 +95,15 @@ namespace liblistfile.NodeTree
 		{
 			br.BaseStream.Seek((long) position, SeekOrigin.Begin);
 
-			//br.BaseStream.Position = (long)position;
-
-			Node outNode = new Node();
-			outNode.Type = (NodeType) br.ReadUInt32();
-			outNode.FileType = (WarcraftFileType)br.ReadUInt64();
-			outNode.NameOffset = br.ReadInt64();
-			outNode.ParentOffset = br.ReadInt64();
-			outNode.ChildCount = br.ReadUInt64();
-			outNode.ChildOffsets = new List<ulong>();
+			Node outNode = new Node
+			{
+				Type = (NodeType) br.ReadUInt32(),
+				FileType = (WarcraftFileType) br.ReadUInt64(),
+				NameOffset = br.ReadInt64(),
+				ParentOffset = br.ReadInt64(),
+				ChildCount = br.ReadUInt64(),
+				ChildOffsets = new List<ulong>()
+			};
 
 			for (ulong i = 0; i < outNode.ChildCount; ++i)
 			{
@@ -155,6 +155,9 @@ namespace liblistfile.NodeTree
 			return (long) size;
 		}
 
+		/// <summary>
+		/// Serializes the current object into a byte array.
+		/// </summary>
 		public byte[] Serialize()
 		{
 			using (MemoryStream ms = new MemoryStream())
@@ -184,6 +187,11 @@ namespace liblistfile.NodeTree
 			}
 		}
 
+		/// <summary>
+		/// Determines whether or not a node is equal to another.
+		/// </summary>
+		/// <param name="obj"></param>
+		/// <returns></returns>
 		public override bool Equals(object obj)
 		{
 			if (!(obj is Node))
@@ -202,6 +210,10 @@ namespace liblistfile.NodeTree
 				this.HardNodeCount == other.HardNodeCount;
 		}
 
+		/// <summary>
+		/// Gets the hash code of this node.
+		/// </summary>
+		/// <returns></returns>
 		public override int GetHashCode()
 		{
 			unchecked
