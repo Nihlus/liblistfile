@@ -22,7 +22,7 @@
 
 using System;
 
-namespace Everlook.Exceptions
+namespace liblistfile.Exceptions
 {
 	/// <summary>
 	/// Thrown when an unsupported version of the node tree is loaded.
@@ -30,7 +30,7 @@ namespace Everlook.Exceptions
 	public class UnsupportedNodeTreeVersionException : Exception
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="UnseekableNodeTreeException"/> class.
+		/// Initializes a new instance of the <see cref="NodeTreeNotFoundException"/> class.
 		/// </summary>
 		public UnsupportedNodeTreeVersionException()
 		{
@@ -38,7 +38,7 @@ namespace Everlook.Exceptions
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="UnseekableNodeTreeException"/> class.
+		/// Initializes a new instance of the <see cref="NodeTreeNotFoundException"/> class.
 		/// </summary>
 		/// <param name="message">A user-defined message.</param>
 		public UnsupportedNodeTreeVersionException(string message) : base(message)
@@ -47,7 +47,7 @@ namespace Everlook.Exceptions
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="UnseekableNodeTreeException"/> class.
+		/// Initializes a new instance of the <see cref="NodeTreeNotFoundException"/> class.
 		/// </summary>
 		/// <param name="message">A user-defined message.</param>
 		/// <param name="inner">The exception which caused this exception.</param>

@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using liblistfile.Exceptions;
 using liblistfile.NodeTree;
 using Warcraft.Core.Extensions;
 
@@ -80,7 +81,7 @@ namespace liblistfile
 		{
 			if (!File.Exists(treeLocation))
 			{
-				throw new ArgumentException("The file must exist.", nameof(treeLocation));
+				throw new NodeTreeNotFoundException();
 			}
 
 			this.TreeLocation = treeLocation;
@@ -95,7 +96,7 @@ namespace liblistfile
 				if (storedVersion != Version)
 				{
 					// Do whatever functionality switching is needed
-					throw new ArgumentException("Unsupported node tree version.", nameof(treeLocation));
+					throw new UnsupportedNodeTreeVersionException();
 				}
 
 				// Latest implementation

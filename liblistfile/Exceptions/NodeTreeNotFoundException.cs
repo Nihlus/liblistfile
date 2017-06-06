@@ -1,5 +1,5 @@
 //
-//  UnseekableNodeTreeException.cs
+//  NodeTreeNotFoundException.cs
 //
 //  Author:
 //       Jarl Gullberg <jarl.gullberg@gmail.com>
@@ -25,33 +25,33 @@ using System;
 namespace liblistfile.Exceptions
 {
 	/// <summary>
-	/// Thrown when the the node tree is attempted to be loaded from an unseekable stream.
+	/// Thrown when the the node tree is attempted to be loaded from a nonexistent file.
 	/// </summary>
-	public class UnseekableNodeTreeException : Exception
+	public class NodeTreeNotFoundException : Exception
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="UnseekableNodeTreeException"/> class.
+		/// Initializes a new instance of the <see cref="NodeTreeNotFoundException"/> class.
 		/// </summary>
-		public UnseekableNodeTreeException()
+		public NodeTreeNotFoundException()
 		{
 
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="UnseekableNodeTreeException"/> class.
+		/// Initializes a new instance of the <see cref="NodeTreeNotFoundException"/> class.
 		/// </summary>
 		/// <param name="message">A user-defined message.</param>
-		public UnseekableNodeTreeException(string message) : base(message)
+		public NodeTreeNotFoundException(string message) : base(message)
 		{
 
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="UnseekableNodeTreeException"/> class.
+		/// Initializes a new instance of the <see cref="NodeTreeNotFoundException"/> class.
 		/// </summary>
 		/// <param name="message">A user-defined message.</param>
 		/// <param name="inner">The exception which caused this exception.</param>
-		public UnseekableNodeTreeException(string message, Exception inner) : base(message, inner)
+		public NodeTreeNotFoundException(string message, Exception inner) : base(message, inner)
 		{
 
 		}

@@ -40,6 +40,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ByteArrayComparer.cs" />
+    <Compile Include="Exceptions\NodeTreeNotFoundException.cs" />
+    <Compile Include="Exceptions\UnsupportedNodeTreeVersionException.cs" />
     <Compile Include="ListfileDictionaryEntry.cs" />
     <Compile Include="NodeTree\MultiPackageNodeTreeBuilder.cs" />
     <Compile Include="NodeTree\Node.cs" />
