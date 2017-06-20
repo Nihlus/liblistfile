@@ -1,65 +1,29 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProjectGuid>{CE32160A-4A61-4813-93A5-D9DFDD7AB470}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>liblistfile</RootNamespace>
-    <AssemblyName>liblistfile</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\liblistfile.key</AssemblyOriginatorKeyFile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-    <DocumentationFile>bin\Debug\liblistfile.xml</DocumentationFile>
-    <PlatformTarget>x86</PlatformTarget>
+  <PropertyGroup>
+    <Title>liblistfile</Title>
+    <Authors>Jarl Gullberg</Authors>
+    <Version>2.0.0</Version>
+    <Description>Managed library for generating and optimizing lists and node trees created from lists of file paths..</Description>
+    <Copyright>Copyright Jarl Gullberg 2017</Copyright>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-    <DocumentationFile>bin\Release\liblistfile.xml</DocumentationFile>
-    <PlatformTarget>x86</PlatformTarget>
+  <PropertyGroup>
+    <PackageVersion>2.0.0-preview1</PackageVersion>
+    <PackageId>liblistfile</PackageId>
+    <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.en.html</PackageLicenseUrl>
+    <PackageProjectUrl>http://wowdev.tools/</PackageProjectUrl>
+    <PackageReleaseNotes>Initial release on NuGet and port to .NET Standard 2.0.</PackageReleaseNotes>
+    <PackageTags>cross-platform;file-format</PackageTags>
+    <PackageOutputPath>../nuget</PackageOutputPath>
+    <IncludeSymbols>true</IncludeSymbols>
+    <RepositoryUrl>https://github.com/Nihlus/liblistfile</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DotNetZip, Version=1.10.1.0, Culture=neutral, PublicKeyToken=6583c7c814667745">
-      <HintPath>$(SolutionDir)\packages\DotNetZip.1.10.1\lib\net20\DotNetZip.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="ByteArrayComparer.cs" />
-    <Compile Include="Exceptions\NodeTreeNotFoundException.cs" />
-    <Compile Include="Exceptions\UnsupportedNodeTreeVersionException.cs" />
-    <Compile Include="ListfileDictionaryEntry.cs" />
-    <Compile Include="NodeTree\MultiPackageNodeTreeBuilder.cs" />
-    <Compile Include="NodeTree\Node.cs" />
-    <Compile Include="NodeTree\NodeIdentifier.cs" />
-    <Compile Include="NodeTree\NodeTreeBuilder.cs" />
-    <Compile Include="NodeTree\NodeType.cs" />
-    <Compile Include="OptimizedList.cs" />
-    <Compile Include="OptimizedNodeTree.cs" />
-    <Compile Include="PathUtilities.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="OptimizedListContainer.cs" />
-    <Compile Include="ListfileDictionary.cs" />
-    <Compile Include="ExtensionMethods.cs" />
-    <Compile Include="Score\TermScore.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Score\" />
+    <Reference Include="DotNetZip" Version="1.10.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Dictionary\dictionary.dic">
@@ -67,16 +31,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\lib\libwarcraft\libwarcraft\libwarcraft.csproj">
-      <Project>{DA06A44E-A67B-46C7-B07D-E90AEBED0502}</Project>
-      <Name>libwarcraft</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libwarcraft\libwarcraft\libwarcraft.csproj">
-      <Project>{DA06A44E-A67B-46C7-B07D-E90AEBED0502}</Project>
-      <Name>libwarcraft</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\lib\libwarcraft\libwarcraft\libwarcraft.csproj" />
   </ItemGroup>
 </Project>
