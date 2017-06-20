@@ -427,9 +427,22 @@ namespace liblistfile
 		/// </summary>
 		/// <returns><c>true</c>, if the dictionary contains the term, <c>false</c> otherwise.</returns>
 		/// <param name="cleanTerm">term.</param>
-		private bool ContainsTerm(string cleanTerm)
+		public bool ContainsTerm(string cleanTerm)
 		{
 			return this.DictionaryEntries.ContainsKey(cleanTerm.ToUpperInvariant());
+		}
+
+		/// <summary>
+		/// Deletes the specified term from the dictionary.
+		/// </summary>
+		/// <param name="term"></param>
+		public void DeleteTerm(string term)
+		{
+			string termKey = term.ToUpperInvariant();
+			if (this.DictionaryEntries.ContainsKey(termKey))
+			{
+				this.DictionaryEntries.Remove(termKey);
+			}
 		}
 
 		/// <summary>
