@@ -23,7 +23,7 @@
     <RepositoryUrl>https://github.com/Nihlus/liblistfile</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DotNetZip" Version="1.10.1.0" />
+    <PackageReference Include="DotNetZip" Version="1.10.1" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Dictionary\dictionary.dic">
@@ -31,6 +31,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\lib\libwarcraft\libwarcraft\libwarcraft.csproj" />
+    <ProjectReference Include="$(SolutionDir)\lib\libwarcraft\libwarcraft\libwarcraft.csproj" />
   </ItemGroup>
 </Project>
