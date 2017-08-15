@@ -11,11 +11,11 @@
     <Copyright>Copyright Jarl Gullberg 2017</Copyright>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageVersion>2.0.0</PackageVersion>
+    <PackageVersion>2.0.1</PackageVersion>
     <PackageId>liblistfile</PackageId>
     <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.en.html</PackageLicenseUrl>
     <PackageProjectUrl>http://wowdev.tools/</PackageProjectUrl>
-    <PackageReleaseNotes>Initial release on NuGet and port to .NET Standard 2.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>Update packages.</PackageReleaseNotes>
     <PackageTags>cross-platform;file-format</PackageTags>
     <PackageOutputPath>../nuget</PackageOutputPath>
     <IncludeSymbols>true</IncludeSymbols>
