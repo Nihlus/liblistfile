@@ -23,7 +23,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Ionic.BZip2;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
@@ -107,7 +108,7 @@ namespace liblistfile
                     int compressedDataSize = (int)(inData.LongLength - hashesSize);
                     using (MemoryStream compressedData = new MemoryStream(br.ReadBytes(compressedDataSize)))
                     {
-                        using (BZip2InputStream bz = new BZip2InputStream(compressedData))
+                        using (BZip2Stream bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
                         {
                             using (MemoryStream decompressedData = new MemoryStream())
                             {

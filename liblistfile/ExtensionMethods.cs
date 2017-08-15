@@ -23,7 +23,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using Ionic.BZip2;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
 
 namespace liblistfile
@@ -57,11 +58,12 @@ namespace liblistfile
 			{
 				using (MemoryStream om = new MemoryStream())
 				{
-					using (BZip2OutputStream bo = new BZip2OutputStream(om))
+					using (BZip2Stream bo = new BZip2Stream(om, CompressionMode.Compress, true))
 					{
 						byte[] serializedList = uncompressedBytes;
 						bo.Write(serializedList, 0, serializedList.Length);
 					}
+
 					compressedBytes = om.ToArray();
 				}
 			}

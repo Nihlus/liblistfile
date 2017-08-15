@@ -25,11 +25,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Ionic.BZip2;
 using liblistfile.Score;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
@@ -214,7 +215,7 @@ namespace liblistfile
 
 					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
 					{
-						using (BZip2InputStream bz = new BZip2InputStream(compressedData))
+						using (BZip2Stream bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
 						{
 							using (MemoryStream decompressedData = new MemoryStream())
 							{
