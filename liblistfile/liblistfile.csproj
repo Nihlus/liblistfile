@@ -12,7 +12,7 @@
     <Copyright>Copyright Jarl Gullberg 2017</Copyright>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageVersion>2.0.0-preview1</PackageVersion>
+    <PackageVersion>2.0.0</PackageVersion>
     <PackageId>liblistfile</PackageId>
     <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.en.html</PackageLicenseUrl>
     <PackageProjectUrl>http://wowdev.tools/</PackageProjectUrl>
@@ -24,13 +24,13 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DotNetZip" Version="1.10.1" />
+    <PackageReference Include="libwarcraft">
+      <Version>2.0.1-preview1</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Dictionary\dictionary.dic">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\lib\libwarcraft\libwarcraft\libwarcraft.csproj" />
   </ItemGroup>
 </Project>

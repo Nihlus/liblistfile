@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "liblistfile", "liblistfile\liblistfile.csproj", "{CE32160A-4A61-4813-93A5-D9DFDD7AB470}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libwarcraft", "lib\libwarcraft\libwarcraft\libwarcraft.csproj", "{DA06A44E-A67B-46C7-B07D-E90AEBED0502}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -15,9 +13,5 @@ Global
 		{CE32160A-4A61-4813-93A5-D9DFDD7AB470}.Debug|x86.Build.0 = Debug|x86
 		{CE32160A-4A61-4813-93A5-D9DFDD7AB470}.Release|x86.ActiveCfg = Release|x86
 		{CE32160A-4A61-4813-93A5-D9DFDD7AB470}.Release|x86.Build.0 = Release|x86
-		{DA06A44E-A67B-46C7-B07D-E90AEBED0502}.Debug|x86.ActiveCfg = Debug|x86
-		{DA06A44E-A67B-46C7-B07D-E90AEBED0502}.Debug|x86.Build.0 = Debug|x86
-		{DA06A44E-A67B-46C7-B07D-E90AEBED0502}.Release|x86.ActiveCfg = Release|x86
-		{DA06A44E-A67B-46C7-B07D-E90AEBED0502}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 EndGlobal
