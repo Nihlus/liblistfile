@@ -103,7 +103,7 @@ namespace liblistfile.NodeTree
 		public void ConsumePackage(string packageName, IPackage package, CancellationToken ct = new CancellationToken())
 		{
 			CreateMetaPackageNode(packageName);
-			List<string> packagePaths = package.GetFileList();
+			List<string> packagePaths = package.GetFileList().ToList();
 
 			if (packagePaths == null)
 			{

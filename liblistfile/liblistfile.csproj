@@ -27,7 +27,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="libwarcraft" Version="2.0.2" />
+    <PackageReference Include="libwarcraft" Version="2.7.0-CI00062" />
     <PackageReference Include="SharpCompress" Version="0.18.0" />
   </ItemGroup>
 </Project>
