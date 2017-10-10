@@ -128,6 +128,10 @@ namespace liblistfile
 		/// </summary>
 		public readonly List<string> DictionaryWords = new List<string>();
 
+		private static readonly Regex WordsRegex = new Regex("([a-zA-Z]{4,})", RegexOptions.Compiled);
+		private static readonly Regex AbbreviationRegex = new Regex("(?<=_|^)[A-Z]{2,3}(?=_)", RegexOptions.Compiled);
+		private static readonly Regex TermToWordsRegex = new Regex("([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)", RegexOptions.Compiled);
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="liblistfile.ListfileDictionary"/> class.
 		/// This constructor creates a new, empty dictionary.
@@ -287,21 +291,21 @@ namespace liblistfile
 			string extension = Path.GetExtension(term);
 
 			// Get everything in the term that isn't an abbreviation or a non-word character
-			MatchCollection matches = Regex.Matches(transientTerm, "([a-zA-Z]{4,})");
+			MatchCollection matches = WordsRegex.Matches(transientTerm);
 
 			foreach (Match match in matches)
 			{
 				string transientMatch = match.Value;
 				foreach (string word in this.DictionaryWords)
 				{
-					transientMatch = transientMatch.ReplaceCaseInsensitive(word.ToUpperInvariant(), word);
+					transientMatch = transientMatch.FastReplaceCaseInsensitive(word.ToUpperInvariant(), word);
 				}
 
-				transientTerm = transientTerm.ReplaceCaseInsensitive(transientMatch.ToUpperInvariant(), transientMatch);
+				transientTerm = transientTerm.FastReplaceCaseInsensitive(transientMatch.ToUpperInvariant(), transientMatch);
 			}
 
 			// Get all abbreviations between underscores
-			MatchCollection abbreviationMatches = Regex.Matches(transientTerm, "(?<=_|^)[A-Z]{2,3}(?=_)");
+			MatchCollection abbreviationMatches = AbbreviationRegex.Matches(transientTerm);
 
 			foreach (Match match in abbreviationMatches)
 			{
@@ -310,10 +314,10 @@ namespace liblistfile
 				// We'll only look at words which have the same length as the abbreviation
 				foreach (string word in this.DictionaryWords.Where(str => str.Length == match.Value.Length))
 				{
-					transientMatch = transientMatch.ReplaceCaseInsensitive(word.ToUpperInvariant(), word);
+					transientMatch = transientMatch.FastReplaceCaseInsensitive(word.ToUpperInvariant(), word);
 				}
 
-				transientTerm = transientTerm.ReplaceCaseInsensitive(transientMatch.ToUpperInvariant(), transientMatch);
+				transientTerm = transientTerm.FastReplaceCaseInsensitive(transientMatch.ToUpperInvariant(), transientMatch);
 			}
 
 			return transientTerm + extension.ToLowerInvariant();
@@ -409,7 +413,7 @@ namespace liblistfile
 				yield break;
 			}
 
-			MatchCollection matches = Regex.Matches(Path.GetFileNameWithoutExtension(term), "([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)");
+			MatchCollection matches = TermToWordsRegex.Matches(Path.GetFileNameWithoutExtension(term));
 
 			foreach (Match match in matches)
 			{

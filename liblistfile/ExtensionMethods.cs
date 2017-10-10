@@ -19,6 +19,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -102,6 +104,57 @@ namespace liblistfile
 				                RegexOptions.IgnoreCase
 			                );
 			return result;
+		}
+
+		/// <summary>
+		/// Replaces an instance of a string with another inside this string. This replacement is case-insensitive.
+		/// Algorithm taken from https://www.codeproject.com/Articles/10890/Fastest-C-Case-Insenstive-String-Replace.
+		/// </summary>
+		/// <param name="original"></param>
+		/// <param name="pattern"></param>
+		/// <param name="replacement"></param>
+		/// <returns></returns>
+		public static string FastReplaceCaseInsensitive(this string original, string pattern, string replacement)
+		{
+			int count;
+			int position0;
+			int position1;
+
+			count = position0 = 0;
+
+			string upperString = original.ToUpper();
+			string upperPattern = pattern.ToUpper();
+
+			int inc = (original.Length / pattern.Length) * (replacement.Length-pattern.Length);
+
+			char[] chars = new char[original.Length + Math.Max(0, inc)];
+
+			while((position1 = upperString.IndexOf(upperPattern, position0, StringComparison.Ordinal)) != -1)
+			{
+				for (int i = position0; i < position1; ++i)
+				{
+					chars[count++] = original[i];
+				}
+
+				for (int i = 0; i < replacement.Length; ++i)
+				{
+					chars[count++] = replacement[i];
+				}
+
+				position0 = position1 + pattern.Length;
+			}
+
+			if (position0 == 0)
+			{
+				return original;
+			}
+
+			for (int i = position0; i < original.Length; ++i)
+			{
+				chars[count++] = original[i];
+			}
+
+			return new string(chars, 0, count);
 		}
 
 		/// <summary>
