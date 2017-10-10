@@ -167,14 +167,10 @@ namespace liblistfile.NodeTree
 		/// <param name="path"></param>
 		protected virtual void ConsumePath(string packageName, IPackage package, string path)
 		{
-			bool isDirectory = path.EndsWith("\\");
-			string nodeName = PathUtilities.GetPathTargetName(path);
-
 			// Each node is identified by its own name, and the name of its parent. Since we're mirroring a file
 			// system here, duplicate names under one parent are not allowed, but they are allowed globally.
 			// We'll acquire the identifiers for the new node and its parent for future use.
 			NodeIdentifier nodeIdentifier = new NodeIdentifier(packageName, path);
-			NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
 
 			// There's a good chance this node has already been encountered somewhere.
 			// If that is the case, we can skip it.
@@ -182,6 +178,10 @@ namespace liblistfile.NodeTree
 			{
 				return;
 			}
+
+			bool isDirectory = path.EndsWith("\\");
+			string nodeName = PathUtilities.GetPathTargetName(path);
+			NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
 
 			// If the part is the final part, then it is almost guaranteed to be a file - if not, a directory.
 			// Since listfiles do not support empty directories, we're not checking for extensions here. If
