@@ -38,7 +38,7 @@ namespace liblistfile
 	/// char[] Names
 	///
 	/// </summary>
-	public class OptimizedNodeTree
+	public class OptimizedNodeTree : IDisposable
 	{
 		/// <summary>
 		/// The current version of the node tree format.
@@ -50,6 +50,9 @@ namespace liblistfile
 		private readonly long SortListsOffset;
 
 		private readonly string TreeLocation;
+
+		private readonly object ReaderLock = new object();
+		private readonly BinaryReader TreeReader;
 
 		/// <summary>
 		/// The absolute root node of the tree.
@@ -86,24 +89,20 @@ namespace liblistfile
 
 			this.TreeLocation = treeLocation;
 
-			using (FileStream fs = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read))
-			using (BinaryReader br = new BinaryReader(fs))
+			var treeStream = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read);
+			this.TreeReader = new BinaryReader(treeStream);
+
+			uint storedVersion = this.TreeReader.ReadUInt32();
+			if (storedVersion != Version)
 			{
-				// Reset the position, in case the stream was recently created.
-				br.BaseStream.Position = 0;
-
-				uint storedVersion = br.ReadUInt32();
-				if (storedVersion != Version)
-				{
-					// Do whatever functionality switching is needed
-					throw new UnsupportedNodeTreeVersionException();
-				}
-
-				// Latest implementation
-				this.NodesOffset = br.ReadInt64();
-				this.NamesOffset = br.ReadInt64();
-				this.SortListsOffset = br.ReadInt64();
+				// Do whatever functionality switching is needed
+				throw new UnsupportedNodeTreeVersionException();
 			}
+
+			// Latest implementation
+			this.NodesOffset = this.TreeReader.ReadInt64();
+			this.NamesOffset = this.TreeReader.ReadInt64();
+			this.SortListsOffset = this.TreeReader.ReadInt64();
 		}
 
 		/// <summary>
@@ -124,11 +123,11 @@ namespace liblistfile
 			}
 
 			// Nodes may be read from multiple threads at any time due to async/await patterns, so we
-			// create a new stream each time a node is read.
-			using (FileStream fs = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read))
-			using (BinaryReader br = new BinaryReader(fs))
+			// lock the reader
+
+			lock (this.ReaderLock)
 			{
-				Node newNode = Node.ReadNode(br, offset);
+				Node newNode = Node.ReadNode(this.TreeReader, offset);
 
 				if (newNode == null)
 				{
@@ -168,12 +167,17 @@ namespace liblistfile
 				return string.Empty;
 			}
 
-			using (FileStream fs = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read))
-			using (BinaryReader br = new BinaryReader(fs))
+			lock (this.ReaderLock)
 			{
-				br.BaseStream.Position = node.NameOffset;
-				return br.ReadNullTerminatedString();
+				this.TreeReader.BaseStream.Position = node.NameOffset;
+				return this.TreeReader.ReadNullTerminatedString();
 			}
+		}
+
+		/// <inheritdoc />
+		public void Dispose()
+		{
+			this.TreeReader?.Dispose();
 		}
 	}
 }
