@@ -176,6 +176,7 @@ namespace liblistfile.NodeTree
 			// If that is the case, we can skip it.
 			if (this.Nodes.ContainsKey(nodeIdentifier))
 			{
+				Console.WriteLine($"Skipping {nodeIdentifier}");
 				return;
 			}
 

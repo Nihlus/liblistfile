@@ -568,51 +568,32 @@ namespace liblistfile
 					// equal.
 					return 0;
 				}
-				else
-				{
-					// If x is null and y is not null, y
-					// is greater.
-					return -1;
-				}
-			}
-			else
-			{
-				// If x is not null...
-				//
-				if (y == null)
-                // ...and y is null, x is greater.
-				{
-					return 1;
-				}
-				else
-				{
-					// ...and y is not null, compare the
-					// lengths of the two strings.
-					//
-					int retval = x.Length.CompareTo(y.Length);
 
-					if (retval != 0)
-					{
-						// If the strings are not of equal length,
-						// the longer string is greater.
-						//
-						return retval;
-					}
-					else
-					{
-						// If the strings are of equal length,
-						// sort them with ordinary string comparison.
-						//
-						return string.Compare(x, y, StringComparison.Ordinal);
-					}
-				}
+				// If x is null and y is not null, y
+				// is greater.
+				return -1;
 			}
+
+			// If x is not null and y is null, x is greater.
+			if (y == null)
+			{
+				return 1;
+			}
+
+			// If x is not null and y is not null, compare the lengths of the two strings.
+			int retval = x.Length.CompareTo(y.Length);
+
+			if (retval != 0)
+			{
+				// If the strings are not of equal length, the longer string is greater.
+				return retval;
+			}
+
+			// If the strings are of equal length, sort them with ordinary string comparison.
+			return string.Compare(x, y, StringComparison.Ordinal);
 		}
 
-		/// <summary>
-		/// Serializes the object into a byte array.
-		/// </summary>
-		/// <returns>The bytes.</returns>
+		/// <inheritdoc />
 		public byte[] Serialize()
 		{
 			using (MemoryStream ms = new MemoryStream())

@@ -58,11 +58,7 @@ namespace liblistfile.NodeTree
 		/// <returns></returns>
 		public string GetNodeName() => PathUtilities.GetPathTargetName(this.Path);
 
-		/// <summary>
-		/// Determines if this object is equal to another.
-		/// </summary>
-		/// <param name="other"></param>
-		/// <returns></returns>
+		/// <inheritdoc />
 		public bool Equals(NodeIdentifier other)
 		{
 			if (other == null)
@@ -73,11 +69,7 @@ namespace liblistfile.NodeTree
 			return this.Package == other.Package && this.Path == other.Path;
 		}
 
-		/// <summary>
-		/// Determines if this object is equal to another.
-		/// </summary>
-		/// <param name="obj"></param>
-		/// <returns></returns>
+		/// <inheritdoc />
 		public override bool Equals(object obj)
 		{
 			if (!(obj is NodeIdentifier))
@@ -88,10 +80,7 @@ namespace liblistfile.NodeTree
 			return Equals((NodeIdentifier) obj);
 		}
 
-		/// <summary>
-		/// Computes the hash code of the object.
-		/// </summary>
-		/// <returns></returns>
+		/// <inheritdoc />
 		public override int GetHashCode()
 		{
 			unchecked
@@ -103,6 +92,12 @@ namespace liblistfile.NodeTree
 
 				return hash;
 			}
+		}
+
+		/// <inheritdoc />
+		public override string ToString()
+		{
+			return $"{this.Package} : {this.Path}";
 		}
 	}
 }
