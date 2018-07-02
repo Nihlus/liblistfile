@@ -150,7 +150,7 @@ namespace liblistfile
 		public ListfileDictionary(byte[] data)
 			: this()
 		{
-			using (MemoryStream ms = new MemoryStream(data))
+			using (var ms = new MemoryStream(data))
 			{
 				LoadFromStream(ms);
 			}
@@ -175,26 +175,26 @@ namespace liblistfile
 		/// <exception cref="InvalidDataException"></exception>
 		public void LoadFromStream(Stream dataStream, CancellationToken ct = new CancellationToken())
 		{
-			using (BinaryReader br = new BinaryReader(dataStream))
+			using (var br = new BinaryReader(dataStream))
 			{
-				string dataSignature = new string(br.ReadChars(4));
+				var dataSignature = new string(br.ReadChars(4));
 				if (dataSignature != Signature)
 				{
 					throw new InvalidDataException("The input data did not begin with a dictionary signature.");
 				}
-				uint dataVersion = br.ReadUInt32();
+				var dataVersion = br.ReadUInt32();
 
 				if (dataVersion < Version)
 				{
 					if (dataVersion < 2)
 					{
 						// Version 2 started compressing the dictionary block
-						ulong recordCount = br.ReadUInt64();
+						var recordCount = br.ReadUInt64();
 						for (ulong i = 0; i < recordCount; ++i)
 						{
 							ct.ThrowIfCancellationRequested();
 
-							ListfileDictionaryEntry entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
+							var entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
 							this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
 						}
 					}
@@ -203,7 +203,7 @@ namespace liblistfile
 					if (dataVersion == 0)
 					{
 						// From version 0 and up, the score calculation was altered. Recalculate all scores.
-						foreach (KeyValuePair<string, ListfileDictionaryEntry> entry in this.DictionaryEntries)
+						foreach (var entry in this.DictionaryEntries)
 						{
 							ct.ThrowIfCancellationRequested();
 
@@ -214,27 +214,27 @@ namespace liblistfile
 				else
 				{
 					// The most current implementation
-					ulong recordCount = br.ReadUInt64();
-					ulong recordBlockSize = br.ReadUInt64();
+					var recordCount = br.ReadUInt64();
+					var recordBlockSize = br.ReadUInt64();
 
-					using (MemoryStream compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
+					using (var compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
 					{
-						using (BZip2Stream bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
+						using (var bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
 						{
-							using (MemoryStream decompressedData = new MemoryStream())
+							using (var decompressedData = new MemoryStream())
 							{
 								// Decompress the data into the stream
 								bz.CopyTo(decompressedData);
 
 								// Read the dictionary elements
 								decompressedData.Position = 0;
-								using (BinaryReader zr = new BinaryReader(decompressedData))
+								using (var zr = new BinaryReader(decompressedData))
 								{
 									for (ulong i = 0; i < recordCount; ++i)
 									{
 										ct.ThrowIfCancellationRequested();
 
-										ListfileDictionaryEntry entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
+										var entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
 										this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
 									}
 								}
@@ -244,7 +244,7 @@ namespace liblistfile
 				}
 
 				// Extract all good words from high-scoring terms
-				foreach (KeyValuePair<string, ListfileDictionaryEntry> highScoreEntryPair in this.HighScoreEntries)
+				foreach (var highScoreEntryPair in this.HighScoreEntries)
 				{
 					ct.ThrowIfCancellationRequested();
 
@@ -262,7 +262,7 @@ namespace liblistfile
 		/// <param name="bSortDictionary">Whether or not the dictionary should be sorted after words have been added.</param>
 		public void AddNewTermWords(string term, bool bSortDictionary = true)
 		{
-			foreach (string word in GetWordsFromTerm(Path.GetFileNameWithoutExtension(term)))
+			foreach (var word in GetWordsFromTerm(Path.GetFileNameWithoutExtension(term)))
 			{
 				if (!this.DictionaryWords.Contains(word))
 				{
@@ -287,16 +287,16 @@ namespace liblistfile
 				return string.Empty;
 			}
 
-			string transientTerm = Path.GetFileNameWithoutExtension(term);
-			string extension = Path.GetExtension(term);
+			var transientTerm = Path.GetFileNameWithoutExtension(term);
+			var extension = Path.GetExtension(term);
 
 			// Get everything in the term that isn't an abbreviation or a non-word character
-			MatchCollection matches = WordsRegex.Matches(transientTerm);
+			var matches = WordsRegex.Matches(transientTerm);
 
 			foreach (Match match in matches)
 			{
-				string transientMatch = match.Value;
-				foreach (string word in this.DictionaryWords)
+				var transientMatch = match.Value;
+				foreach (var word in this.DictionaryWords)
 				{
 					transientMatch = transientMatch.FastReplaceCaseInsensitive(word.ToUpperInvariant(), word);
 				}
@@ -305,14 +305,14 @@ namespace liblistfile
 			}
 
 			// Get all abbreviations between underscores
-			MatchCollection abbreviationMatches = AbbreviationRegex.Matches(transientTerm);
+			var abbreviationMatches = AbbreviationRegex.Matches(transientTerm);
 
 			foreach (Match match in abbreviationMatches)
 			{
-				string transientMatch = match.Value;
+				var transientMatch = match.Value;
 
 				// We'll only look at words which have the same length as the abbreviation
-				foreach (string word in this.DictionaryWords.Where(str => str.Length == match.Value.Length))
+				foreach (var word in this.DictionaryWords.Where(str => str.Length == match.Value.Length))
 				{
 					transientMatch = transientMatch.FastReplaceCaseInsensitive(word.ToUpperInvariant(), word);
 				}
@@ -333,9 +333,9 @@ namespace liblistfile
 		/// <param name="term">Term.</param>
 		public string GuessScored(string term)
 		{
-			string transientTerm = Guess(term);
-			string scoredTransientTerm = TermScore.Guess(transientTerm);
-			string correctedScoredTransientTerm = Guess(scoredTransientTerm);
+			var transientTerm = Guess(term);
+			var scoredTransientTerm = TermScore.Guess(transientTerm);
+			var correctedScoredTransientTerm = Guess(scoredTransientTerm);
 
 			return correctedScoredTransientTerm;
 		}
@@ -347,7 +347,7 @@ namespace liblistfile
 		/// <param name="unoptimizedList">Unoptimized list.</param>
 		public IEnumerable<string> OptimizeList(IEnumerable<string> unoptimizedList)
 		{
-			foreach (string path in unoptimizedList)
+			foreach (var path in unoptimizedList)
 			{
 				if (string.IsNullOrEmpty(path))
 				{
@@ -365,18 +365,18 @@ namespace liblistfile
 		/// <returns></returns>
 		public string OptimizePath(string path)
 		{
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 
-			string[] parts = path.Split('\\');
-			for (int i = 0; i < parts.Length; ++i)
+			var parts = path.Split('\\');
+			for (var i = 0; i < parts.Length; ++i)
 			{
 				if (string.IsNullOrEmpty(parts[i]))
 				{
 					continue;
 				}
 
-				string extension = Path.GetExtension(parts[i]).ToLowerInvariant();
-				string potentialTerm = Path.GetFileNameWithoutExtension(parts[i]);
+				var extension = Path.GetExtension(parts[i]).ToLowerInvariant();
+				var potentialTerm = Path.GetFileNameWithoutExtension(parts[i]);
 
 				if (!ContainsTerm(potentialTerm))
 				{
@@ -406,14 +406,14 @@ namespace liblistfile
 		/// <param name="term">Term.</param>
 		public static IEnumerable<string> GetWordsFromTerm(string term)
 		{
-			List<string> words = new List<string>();
+			var words = new List<string>();
 
 			if (string.IsNullOrEmpty(term))
 			{
 				yield break;
 			}
 
-			MatchCollection matches = TermToWordsRegex.Matches(Path.GetFileNameWithoutExtension(term));
+			var matches = TermToWordsRegex.Matches(Path.GetFileNameWithoutExtension(term));
 
 			foreach (Match match in matches)
 			{
@@ -443,7 +443,7 @@ namespace liblistfile
 		/// <param name="term"></param>
 		public void DeleteTerm(string term)
 		{
-			string termKey = term.ToUpperInvariant();
+			var termKey = term.ToUpperInvariant();
 			if (this.DictionaryEntries.ContainsKey(termKey))
 			{
 				this.DictionaryEntries.Remove(termKey);
@@ -483,10 +483,10 @@ namespace liblistfile
 				return false;
 			}
 
-			string cleanTerm = Path.GetFileNameWithoutExtension(term);
+			var cleanTerm = Path.GetFileNameWithoutExtension(term);
 			if (!ContainsTerm(cleanTerm))
 			{
-				ListfileDictionaryEntry newEntry = new ListfileDictionaryEntry(cleanTerm, TermScore.Calculate(cleanTerm));
+				var newEntry = new ListfileDictionaryEntry(cleanTerm, TermScore.Calculate(cleanTerm));
 
 				this.DictionaryEntries.Add(cleanTerm.ToUpperInvariant(), newEntry);
 				return true;
@@ -508,7 +508,7 @@ namespace liblistfile
 				return false;
 			}
 
-			string cleanTerm = Path.GetFileNameWithoutExtension(term);
+			var cleanTerm = Path.GetFileNameWithoutExtension(term);
 			if (!ContainsTerm(cleanTerm))
 			{
 				return AddTermEntry(cleanTerm);
@@ -531,10 +531,10 @@ namespace liblistfile
 				return false;
 			}
 
-			string cleanTerm = Path.GetFileNameWithoutExtension(term);
+			var cleanTerm = Path.GetFileNameWithoutExtension(term);
 			if (!ContainsTerm(cleanTerm))
 			{
-				bool success = AddTermEntry(cleanTerm);
+				var success = AddTermEntry(cleanTerm);
 				if (success)
 				{
 					this.DictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
@@ -581,7 +581,7 @@ namespace liblistfile
 			}
 
 			// If x is not null and y is not null, compare the lengths of the two strings.
-			int retval = x.Length.CompareTo(y.Length);
+			var retval = x.Length.CompareTo(y.Length);
 
 			if (retval != 0)
 			{
@@ -596,11 +596,11 @@ namespace liblistfile
 		/// <inheritdoc />
 		public byte[] Serialize()
 		{
-			using (MemoryStream ms = new MemoryStream())
+			using (var ms = new MemoryStream())
 			{
-				using (BinaryWriter bw = new BinaryWriter(ms))
+				using (var bw = new BinaryWriter(ms))
 				{
-					foreach (char c in Signature)
+					foreach (var c in Signature)
 					{
 						bw.Write(c);
 					}
@@ -610,11 +610,11 @@ namespace liblistfile
 
 					// Compress the dictionary entries
 					byte[] compressedEntries;
-					using (MemoryStream uncompressedDictionaryStream = new MemoryStream())
+					using (var uncompressedDictionaryStream = new MemoryStream())
 					{
-						using (BinaryWriter uncompressedWriter = new BinaryWriter(uncompressedDictionaryStream))
+						using (var uncompressedWriter = new BinaryWriter(uncompressedDictionaryStream))
 						{
-							foreach (KeyValuePair<string, ListfileDictionaryEntry> dictionaryEntryPair in this.DictionaryEntries)
+							foreach (var dictionaryEntryPair in this.DictionaryEntries)
 							{
 								uncompressedWriter.Write(dictionaryEntryPair.Value.Serialize());
 							}

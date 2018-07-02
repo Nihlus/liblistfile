@@ -43,7 +43,7 @@ namespace liblistfile
 		/// <param name="byteArray">Byte array.</param>
 		public static byte[] ComputeHash(this byte[] byteArray)
 		{
-			using (MD5 md5 = MD5.Create())
+			using (var md5 = MD5.Create())
 			{
 				return md5.ComputeHash(byteArray);
 			}
@@ -58,11 +58,11 @@ namespace liblistfile
 			byte[] compressedBytes;
 			if (uncompressedBytes.Length > 0)
 			{
-				using (MemoryStream om = new MemoryStream())
+				using (var om = new MemoryStream())
 				{
-					using (BZip2Stream bo = new BZip2Stream(om, CompressionMode.Compress, true))
+					using (var bo = new BZip2Stream(om, CompressionMode.Compress, true))
 					{
-						byte[] serializedList = uncompressedBytes;
+						var serializedList = uncompressedBytes;
 						bo.Write(serializedList, 0, serializedList.Length);
 					}
 
@@ -97,7 +97,7 @@ namespace liblistfile
 		/// <param name="replacement">Replacement.</param>
 		public static string ReplaceCaseInsensitive(this string input, string search, string replacement)
 		{
-			string result = Regex.Replace(
+			var result = Regex.Replace(
 				                input,
 				                Regex.Escape(search),
 				                replacement.Replace("$", "$$"),
@@ -122,21 +122,21 @@ namespace liblistfile
 
 			count = position0 = 0;
 
-			string upperString = original.ToUpper();
-			string upperPattern = pattern.ToUpper();
+			var upperString = original.ToUpper();
+			var upperPattern = pattern.ToUpper();
 
-			int inc = (original.Length / pattern.Length) * (replacement.Length-pattern.Length);
+			var inc = (original.Length / pattern.Length) * (replacement.Length-pattern.Length);
 
-			char[] chars = new char[original.Length + Math.Max(0, inc)];
+			var chars = new char[original.Length + Math.Max(0, inc)];
 
 			while((position1 = upperString.IndexOf(upperPattern, position0, StringComparison.Ordinal)) != -1)
 			{
-				for (int i = position0; i < position1; ++i)
+				for (var i = position0; i < position1; ++i)
 				{
 					chars[count++] = original[i];
 				}
 
-				for (int i = 0; i < replacement.Length; ++i)
+				for (var i = 0; i < replacement.Length; ++i)
 				{
 					chars[count++] = replacement[i];
 				}
@@ -149,7 +149,7 @@ namespace liblistfile
 				return original;
 			}
 
-			for (int i = position0; i < original.Length; ++i)
+			for (var i = position0; i < original.Length; ++i)
 			{
 				chars[count++] = original[i];
 			}
@@ -163,11 +163,11 @@ namespace liblistfile
 		/// <param name="stringList">String list.</param>
 		public static byte[] Serialize(this List<string> stringList)
 		{
-			using (MemoryStream ms = new MemoryStream(stringList.GetSerializedSize()))
+			using (var ms = new MemoryStream(stringList.GetSerializedSize()))
 			{
-				using (BinaryWriter bw = new BinaryWriter(ms))
+				using (var bw = new BinaryWriter(ms))
 				{
-					foreach (string entry in stringList)
+					foreach (var entry in stringList)
 					{
 						bw.WriteNullTerminatedString(entry);
 					}
@@ -184,8 +184,8 @@ namespace liblistfile
 		/// <param name="stringList">String list.</param>
 		public static int GetSerializedSize(this IEnumerable<string> stringList)
 		{
-			int listSize = 0;
-			foreach (string entry in stringList)
+			var listSize = 0;
+			foreach (var entry in stringList)
 			{
 				listSize += entry.Length + 1;
 			}

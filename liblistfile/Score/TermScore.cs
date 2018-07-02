@@ -46,7 +46,7 @@ namespace liblistfile.Score
 		/// <param name="strict">Whether or not the score should be strict in its calculation.</param>
 		public static float Calculate(string word, bool strict = false)
 		{
-			float score = 0.0f;
+			var score = 0.0f;
 
 			if (word.IsAllUpper())
 			{
@@ -88,20 +88,20 @@ namespace liblistfile.Score
 		/// <param name="word">Word.</param>
 		public static string Guess(string word)
 		{
-			string transientWord = word;
+			var transientWord = word;
 
 			transientWord = transientWord.ToLowerInvariant();
 
 			// Set the first character to be uppercase
-			StringBuilder wordBuilder = new StringBuilder(transientWord)
+			var wordBuilder = new StringBuilder(transientWord)
 			{
 				[0] = char.ToUpper(transientWord[0])
 			};
 
-			char previousChar = (char)0;
-			for (int i = 0; i < transientWord.Length; ++i)
+			var previousChar = (char)0;
+			for (var i = 0; i < transientWord.Length; ++i)
 			{
-				char currentChar = transientWord[i];
+				var currentChar = transientWord[i];
 
 				// Any char following a _ is upper
 				if (previousChar == '_')
@@ -132,8 +132,8 @@ namespace liblistfile.Score
 				// Any set of three chars or less between a string boundary or a _ is upper
 				if (currentChar == '_')
 				{
-					bool isThreeOrLessBetween = false;
-					for (int j = 4; j > 0; --j)
+					var isThreeOrLessBetween = false;
+					for (var j = 4; j > 0; --j)
 					{
 						if ((i - j) < 0 || transientWord[i - j] == '_')
 						{
@@ -144,7 +144,7 @@ namespace liblistfile.Score
 
 					if (isThreeOrLessBetween)
 					{
-						int j = 1;
+						var j = 1;
 						while (i - j >= 0 && j <= 3)
 						{
 							if (transientWord[i - j] == '_')
@@ -170,7 +170,7 @@ namespace liblistfile.Score
 
 				if (i + 1 < transientWord.Length && char.IsDigit(previousChar))
 				{
-					char nextChar = transientWord[i + 1];
+					var nextChar = transientWord[i + 1];
 					if (char.IsDigit(nextChar))
 					{
 						wordBuilder[i] = char.ToLower(currentChar);
@@ -180,7 +180,7 @@ namespace liblistfile.Score
 				if (currentChar == '.')
 				{
 					// Set the rest of the string to be lowercase
-					string extension = transientWord.Substring(i).ToLower();
+					var extension = transientWord.Substring(i).ToLower();
 					transientWord = transientWord.Remove(i);
 					transientWord += extension;
 				}
@@ -198,7 +198,7 @@ namespace liblistfile.Score
 		/// <param name="str">String.</param>
 		public static bool IsAllUpper(this string str)
 		{
-			foreach (char c in str)
+			foreach (var c in str)
 			{
 				if (char.IsLower(c))
 				{
@@ -215,7 +215,7 @@ namespace liblistfile.Score
 		/// <param name="str">String.</param>
 		public static bool IsAllLower(this string str)
 		{
-			foreach (char c in str)
+			foreach (var c in str)
 			{
 				if (char.IsUpper(c))
 				{
@@ -244,7 +244,7 @@ namespace liblistfile.Score
 		{
 			if (str.IsFilename())
 			{
-				string[] parts = str.Split('.');
+				var parts = str.Split('.');
 				return parts[0];
 			}
 			else
@@ -270,8 +270,8 @@ namespace liblistfile.Score
 		/// <param name="str">String.</param>
 		public static bool HasMoreThanOneVersal(this string str)
 		{
-			int versalCount = 0;
-			foreach (char c in str)
+			var versalCount = 0;
+			foreach (var c in str)
 			{
 				if (char.IsUpper(c))
 				{

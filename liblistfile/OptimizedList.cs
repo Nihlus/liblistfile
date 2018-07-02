@@ -96,28 +96,28 @@ namespace liblistfile
 	    /// <param name="inData">The binary data containing the object.</param>
 	    public void LoadBinaryData(byte[] inData)
         {
-            using (MemoryStream ms = new MemoryStream(inData))
+            using (var ms = new MemoryStream(inData))
             {
-                using (BinaryReader br = new BinaryReader(ms))
+                using (var br = new BinaryReader(ms))
                 {
                     // Read the MD5 archive signature.
                     this.PackageHash = br.ReadBytes(this.PackageHash.Length);
                     this.ListHash = br.ReadBytes(this.ListHash.Length);
 
-                    long hashesSize = (this.PackageHash.LongLength + this.ListHash.LongLength);
-                    int compressedDataSize = (int)(inData.LongLength - hashesSize);
-                    using (MemoryStream compressedData = new MemoryStream(br.ReadBytes(compressedDataSize)))
+                    var hashesSize = (this.PackageHash.LongLength + this.ListHash.LongLength);
+                    var compressedDataSize = (int)(inData.LongLength - hashesSize);
+                    using (var compressedData = new MemoryStream(br.ReadBytes(compressedDataSize)))
                     {
-                        using (BZip2Stream bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
+                        using (var bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
                         {
-                            using (MemoryStream decompressedData = new MemoryStream())
+                            using (var decompressedData = new MemoryStream())
                             {
                                 // Decompress the data into the stream
                                 bz.CopyTo(decompressedData);
 
                                 // Read the decompressed strings
                                 decompressedData.Position = 0;
-                                using (BinaryReader listReader = new BinaryReader(decompressedData))
+                                using (var listReader = new BinaryReader(decompressedData))
                                 {
                                     while (decompressedData.Position < decompressedData.Length)
                                     {
@@ -146,18 +146,18 @@ namespace liblistfile
         /// <returns>The bytes.</returns>
         public byte[] Serialize()
         {
-            using (MemoryStream ms = new MemoryStream())
+            using (var ms = new MemoryStream())
             {
-                using (BinaryWriter bw = new BinaryWriter(ms))
+                using (var bw = new BinaryWriter(ms))
                 {
-                    foreach (char c in Signature)
+                    foreach (var c in Signature)
                     {
                         bw.Write(c);
                     }
 
-                    byte[] compressedList = this.OptimizedPaths.Compress();
+                    var compressedList = this.OptimizedPaths.Compress();
 
-                    ulong blockSize = (ulong)this.PackageHash.LongLength + (ulong)this.ListHash.LongLength + (ulong)compressedList.LongLength;
+                    var blockSize = (ulong)this.PackageHash.LongLength + (ulong)this.ListHash.LongLength + (ulong)compressedList.LongLength;
                     bw.Write(blockSize);
 
                     bw.Write(this.PackageHash);
@@ -181,7 +181,7 @@ namespace liblistfile
         /// <see cref="liblistfile.OptimizedList"/>; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
         {
-            OptimizedList other = obj as OptimizedList;
+            var other = obj as OptimizedList;
             if (other != null)
             {
                 return Equals(other);

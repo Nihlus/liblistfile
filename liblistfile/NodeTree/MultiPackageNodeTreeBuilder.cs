@@ -47,7 +47,7 @@ namespace liblistfile.NodeTree
 		/// </summary>
 		public MultiPackageNodeTreeBuilder() : base()
 		{
-			Node packagesFolderNode = new Node
+			var packagesFolderNode = new Node
 			{
 				Type = NodeType.Meta,
 				NameOffset = -2,
@@ -55,8 +55,8 @@ namespace liblistfile.NodeTree
 				ChildOffsets = new List<ulong>()
 			};
 
-			NodeIdentifier packagesFolderNodeIdentifier = new NodeIdentifier("", "Packages");
-			NodeIdentifier rootNodeIdentifier = GetParentIdentifier(packagesFolderNodeIdentifier);
+			var packagesFolderNodeIdentifier = new NodeIdentifier("", "Packages");
+			var rootNodeIdentifier = GetParentIdentifier(packagesFolderNodeIdentifier);
 
 			// Register metanode information
 			this.Nodes.Add(packagesFolderNodeIdentifier, packagesFolderNode);
@@ -103,7 +103,7 @@ namespace liblistfile.NodeTree
 		public void ConsumePackage(string packageName, IPackage package, CancellationToken ct = new CancellationToken())
 		{
 			CreateMetaPackageNode(packageName);
-			List<string> packagePaths = package.GetFileList().ToList();
+			var packagePaths = package.GetFileList().ToList();
 
 			if (packagePaths == null)
 			{
@@ -116,15 +116,15 @@ namespace liblistfile.NodeTree
 				ct.ThrowIfCancellationRequested();
 
 				// Read the next path block.
-				string pathBlockDirectory = PathUtilities.GetDirectoryName(packagePaths.First());
+				var pathBlockDirectory = PathUtilities.GetDirectoryName(packagePaths.First());
 
 				// Create nodes for all directories up the chain
-				IEnumerable<string> pathBlockChain = PathUtilities.GetDirectoryChain(pathBlockDirectory);
-				foreach (string parentDirectory in pathBlockChain)
+				var pathBlockChain = PathUtilities.GetDirectoryChain(pathBlockDirectory);
+				foreach (var parentDirectory in pathBlockChain)
 				{
 					ct.ThrowIfCancellationRequested();
 
-					string path = parentDirectory;
+					var path = parentDirectory;
 
 					if (this.OptimizeCasing)
 					{
@@ -135,13 +135,13 @@ namespace liblistfile.NodeTree
 				}
 
 				// Create file nodes for all files in that directory
-				List<string> completedPaths = new List<string>();
-				IEnumerable<string> pathBlockFiles = packagePaths.Where(p => PathUtilities.GetDirectoryName(p) == pathBlockDirectory);
-				foreach (string blockFile in pathBlockFiles)
+				var completedPaths = new List<string>();
+				var pathBlockFiles = packagePaths.Where(p => PathUtilities.GetDirectoryName(p) == pathBlockDirectory);
+				foreach (var blockFile in pathBlockFiles)
 				{
 					ct.ThrowIfCancellationRequested();
 
-					string path = blockFile;
+					var path = blockFile;
 
 					if (this.OptimizeCasing)
 					{
@@ -152,7 +152,7 @@ namespace liblistfile.NodeTree
 					completedPaths.Add(blockFile);
 				}
 
-				foreach (string completedPath in completedPaths)
+				foreach (var completedPath in completedPaths)
 				{
 					packagePaths.Remove(completedPath);
 				}
@@ -170,7 +170,7 @@ namespace liblistfile.NodeTree
 			// Each node is identified by its own name, and the name of its parent. Since we're mirroring a file
 			// system here, duplicate names under one parent are not allowed, but they are allowed globally.
 			// We'll acquire the identifiers for the new node and its parent for future use.
-			NodeIdentifier nodeIdentifier = new NodeIdentifier(packageName, path);
+			var nodeIdentifier = new NodeIdentifier(packageName, path);
 
 			// There's a good chance this node has already been encountered somewhere.
 			// If that is the case, we can skip it.
@@ -180,18 +180,18 @@ namespace liblistfile.NodeTree
 				return;
 			}
 
-			bool isDirectory = path.EndsWith("\\");
-			string nodeName = PathUtilities.GetPathTargetName(path);
-			NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
+			var isDirectory = path.EndsWith("\\");
+			var nodeName = PathUtilities.GetPathTargetName(path);
+			var parentIdentifier = GetParentIdentifier(nodeIdentifier);
 
 			// If the part is the final part, then it is almost guaranteed to be a file - if not, a directory.
 			// Since listfiles do not support empty directories, we're not checking for extensions here. If
 			// a part is last, then it is by definition a file.
-			NodeType nodeType = isDirectory ? NodeType.Directory : NodeType.File;
+			var nodeType = isDirectory ? NodeType.Directory : NodeType.File;
 
 			if (nodeType == NodeType.File)
 			{
-				MPQFileInfo fileInfo = package.GetFileInfo(path);
+				var fileInfo = package.GetFileInfo(path);
 				if (fileInfo == null)
 				{
 					nodeType |= NodeType.Nonexistent;
@@ -203,10 +203,10 @@ namespace liblistfile.NodeTree
 			}
 
 			// We'll also store the type of file that's referenced for later use.
-			WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : FileInfoUtilities.GetFileType(nodeName);
+			var fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : FileInfoUtilities.GetFileType(nodeName);
 
 			// -2 is used here to denote a missing but existing name that is to be filled in later.
-			Node node = new Node
+			var node = new Node
 			{
 				Type = nodeType,
 				FileType = fileType,
@@ -243,16 +243,16 @@ namespace liblistfile.NodeTree
 		/// <param name="nodeIdentifier"></param>
 		protected void CreateOrUpdateVirtualNode(NodeIdentifier nodeIdentifier)
 		{
-			NodeIdentifier virtualNodeIdentifier = GetVirtualNodeIdentifier(nodeIdentifier);
-			NodeIdentifier virtualParentIdentifier = GetParentIdentifier(virtualNodeIdentifier);
+			var virtualNodeIdentifier = GetVirtualNodeIdentifier(nodeIdentifier);
+			var virtualParentIdentifier = GetParentIdentifier(virtualNodeIdentifier);
 
-			NodeType hardType = this.Nodes[nodeIdentifier].Type;
-			WarcraftFileType hardFileType = this.Nodes[nodeIdentifier].FileType;
+			var hardType = this.Nodes[nodeIdentifier].Type;
+			var hardFileType = this.Nodes[nodeIdentifier].FileType;
 
 			// Create a new virtual node if one does not exist
 			if (!this.Nodes.ContainsKey(virtualNodeIdentifier))
 			{
-				Node virtualNode = new Node
+				var virtualNode = new Node
 				{
 					Type = hardType | NodeType.Virtual,
 					FileType = hardFileType,
@@ -288,7 +288,7 @@ namespace liblistfile.NodeTree
 		/// <returns></returns>
 		protected void CreateMetaPackageNode(string packageName)
 		{
-			Node metaPackageNode = new Node
+			var metaPackageNode = new Node
 			{
 				Type = NodeType.Meta | NodeType.Package,
 				NameOffset = -3,
@@ -296,8 +296,8 @@ namespace liblistfile.NodeTree
 				ChildOffsets = new List<ulong>()
 			};
 
-			NodeIdentifier metaPackageIdentifier = new NodeIdentifier(packageName, $"");
-			NodeIdentifier packagesFolderIdentifier = new NodeIdentifier("", "Packages");
+			var metaPackageIdentifier = new NodeIdentifier(packageName, $"");
+			var packagesFolderIdentifier = new NodeIdentifier("", "Packages");
 
 			this.Nodes.Add(metaPackageIdentifier, metaPackageNode);
 			this.NodeParents.Add(metaPackageIdentifier, packagesFolderIdentifier);

@@ -85,7 +85,7 @@ namespace liblistfile.NodeTree
 		{
 			unchecked
 			{
-				int hash = 17;
+				var hash = 17;
 
 				hash *= 23 + this.Package.GetHashCode();
 				hash *= 23 + this.Path.GetHashCode();

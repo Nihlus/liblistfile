@@ -88,31 +88,31 @@ namespace liblistfile
 		/// <param name="data">File stream.</param>
 		public OptimizedListContainer(byte[] data)
 		{
-			using (MemoryStream ms = new MemoryStream(data))
+			using (var ms = new MemoryStream(data))
 			{
-				using (BinaryReader br = new BinaryReader(ms))
+				using (var br = new BinaryReader(ms))
 				{
-					string dataSignature = new string(br.ReadChars(4));
+					var dataSignature = new string(br.ReadChars(4));
 					if (dataSignature != Signature)
 					{
 						throw new InvalidDataException("The input data did not begin with a container signature.");
 					}
 
-					uint storedVersion = br.ReadUInt32();
+					var storedVersion = br.ReadUInt32();
 
 					this.PackageName = br.ReadNullTerminatedString();
 
-					uint entryCount = br.ReadUInt32();
-					for (int i = 0; i < entryCount; ++i)
+					var entryCount = br.ReadUInt32();
+					for (var i = 0; i < entryCount; ++i)
 					{
-						string listSignature = new string(br.ReadChars(4));
+						var listSignature = new string(br.ReadChars(4));
 						if (listSignature != OptimizedList.Signature)
 						{
 							throw new InvalidDataException("The input data did not begin with a list signature.");
 						}
-						ulong blockSize = br.ReadUInt64();
+						var blockSize = br.ReadUInt64();
 
-						OptimizedList optimizedList = new OptimizedList(br.ReadBytes((int)(blockSize)));
+						var optimizedList = new OptimizedList(br.ReadBytes((int)(blockSize)));
 						this.OptimizedLists.Add(optimizedList.PackageHash, optimizedList);
 					}
 
@@ -143,7 +143,7 @@ namespace liblistfile
 		{
 			if (ContainsPackageListfile(inOptimizedList.PackageHash))
 			{
-				OptimizedList optimizedList = this.OptimizedLists[inOptimizedList.PackageHash];
+				var optimizedList = this.OptimizedLists[inOptimizedList.PackageHash];
 				return optimizedList.ListHash.Equals(inOptimizedList.ListHash);
 			}
 			else
@@ -183,11 +183,11 @@ namespace liblistfile
 		/// <returns>The bytes.</returns>
 		public byte[] Serialize()
 		{
-			using (MemoryStream ms = new MemoryStream())
+			using (var ms = new MemoryStream())
 			{
-				using (BinaryWriter bw = new BinaryWriter(ms))
+				using (var bw = new BinaryWriter(ms))
 				{
-					foreach (char c in Signature)
+					foreach (var c in Signature)
 					{
 						bw.Write(c);
 					}
@@ -195,7 +195,7 @@ namespace liblistfile
 					bw.WriteNullTerminatedString(this.PackageName);
 					bw.Write((uint)this.OptimizedLists.Count);
 
-					foreach (KeyValuePair<byte[], OptimizedList> listPair in this.OptimizedLists)
+					foreach (var listPair in this.OptimizedLists)
 					{
 						bw.Write(listPair.Value.Serialize());
 					}

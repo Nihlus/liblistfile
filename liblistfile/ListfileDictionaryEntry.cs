@@ -75,7 +75,7 @@ namespace liblistfile
 		/// <param name="term">Term.</param>
 		public bool UpdateTerm(string term)
 		{
-			float newTermScore = TermScore.Calculate(term);
+			var newTermScore = TermScore.Calculate(term);
 			if (this.Score < newTermScore)
 			{
 				this.Term = term;
@@ -121,9 +121,9 @@ namespace liblistfile
 		/// <returns>The bytes.</returns>
 		public byte[] Serialize()
 		{
-			using (MemoryStream ms = new MemoryStream(this.Term.Length + 1 + 4))
+			using (var ms = new MemoryStream(this.Term.Length + 1 + 4))
 			{
-				using (BinaryWriter bw = new BinaryWriter(ms))
+				using (var bw = new BinaryWriter(ms))
 				{
 					bw.WriteNullTerminatedString(this.Term);
 					bw.Write(this.Score);

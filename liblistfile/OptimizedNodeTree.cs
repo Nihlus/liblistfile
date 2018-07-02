@@ -92,7 +92,7 @@ namespace liblistfile
 			var treeStream = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read);
 			this.TreeReader = new BinaryReader(treeStream);
 
-			uint storedVersion = this.TreeReader.ReadUInt32();
+			var storedVersion = this.TreeReader.ReadUInt32();
 			if (storedVersion != Version)
 			{
 				// Do whatever functionality switching is needed
@@ -127,7 +127,7 @@ namespace liblistfile
 
 			lock (this.ReaderLock)
 			{
-				Node newNode = Node.ReadNode(this.TreeReader, offset);
+				var newNode = Node.ReadNode(this.TreeReader, offset);
 
 				if (newNode == null)
 				{

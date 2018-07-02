@@ -95,7 +95,7 @@ namespace liblistfile.NodeTree
 		{
 			br.BaseStream.Seek((long) position, SeekOrigin.Begin);
 
-			Node outNode = new Node
+			var outNode = new Node
 			{
 				Type = (NodeType) br.ReadUInt32(),
 				FileType = (WarcraftFileType) br.ReadUInt64(),
@@ -160,8 +160,8 @@ namespace liblistfile.NodeTree
 		/// </summary>
 		public byte[] Serialize()
 		{
-			using (MemoryStream ms = new MemoryStream())
-			using (BinaryWriter bw = new BinaryWriter(ms))
+			using (var ms = new MemoryStream())
+			using (var bw = new BinaryWriter(ms))
 			{
 				bw.Write((uint)this.Type);
 				bw.Write((ulong)this.FileType);
@@ -169,7 +169,7 @@ namespace liblistfile.NodeTree
 				bw.Write(this.ParentOffset);
 
 				bw.Write(this.ChildCount);
-				foreach (ulong childOffset in this.ChildOffsets)
+				foreach (var childOffset in this.ChildOffsets)
 				{
 					bw.Write(childOffset);
 				}
@@ -177,7 +177,7 @@ namespace liblistfile.NodeTree
 				if (this.Type.HasFlag(NodeType.Virtual))
 				{
 					bw.Write(this.HardNodeCount);
-					foreach (ulong hardNodeOffset in this.HardNodeOffsets)
+					foreach (var hardNodeOffset in this.HardNodeOffsets)
 					{
 						bw.Write(hardNodeOffset);
 					}
@@ -199,7 +199,7 @@ namespace liblistfile.NodeTree
 				return false;
 			}
 
-			Node other = (Node) obj;
+			var other = (Node) obj;
 
 			return
 				this.Type == other.Type &&
@@ -218,7 +218,7 @@ namespace liblistfile.NodeTree
 		{
 			unchecked
 			{
-				int hash = 17;
+				var hash = 17;
 
 				hash *= 23 + (int)this.Type;
 				hash *= 23 + (int) this.FileType;

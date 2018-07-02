@@ -98,7 +98,7 @@ namespace liblistfile.NodeTree
 		/// </summary>
 		public NodeTreeBuilder()
 		{
-			NodeIdentifier rootIdentifier = new NodeIdentifier("", "");
+			var rootIdentifier = new NodeIdentifier("", "");
 
 			// Form a root node. -1 is used for the NameOffset to denote a nonexistent name.
 			this.RootNode = new Node
@@ -122,7 +122,7 @@ namespace liblistfile.NodeTree
 		public NodeTreeBuilder(IEnumerable<string> paths) : this()
 		{
 			// Begin forming nodes for the given paths.
-			foreach (string path in paths)
+			foreach (var path in paths)
 			{
 				ConsumePath(path);
 			}
@@ -165,21 +165,21 @@ namespace liblistfile.NodeTree
 		{
 			// Replace any instances of windows path separators with unix path separators to ensure that no matter
 			// what platform we're doing this on, the splitting will be the same.
-			string cleanPath = path.Replace('/', '\\');
+			var cleanPath = path.Replace('/', '\\');
 
 			// Split the path into the composing names
-			string[] pathParts = cleanPath.Split('\\');
+			var pathParts = cleanPath.Split('\\');
 
 			// We'll try to create nodes for each part.
-			for (int i = 0; i < pathParts.Length; ++i)
+			for (var i = 0; i < pathParts.Length; ++i)
 			{
-				bool isPartLastInPath = i == pathParts.Length - 1;
+				var isPartLastInPath = i == pathParts.Length - 1;
 
 				// Each node is identified by its own name, and the name of its parent. Since we're mirroring a file
 				// system here, duplicate names under one parent are not allowed, but they are allowed globally.
 				// We'll acquire the identifiers for the new node and its parent for future use.
-				NodeIdentifier nodeIdentifier = new NodeIdentifier("", string.Join("\\", pathParts.Take(i + 1)));
-				NodeIdentifier parentIdentifier = GetParentIdentifier(nodeIdentifier);
+				var nodeIdentifier = new NodeIdentifier("", string.Join("\\", pathParts.Take(i + 1)));
+				var parentIdentifier = GetParentIdentifier(nodeIdentifier);
 
 				// There's a good chance this node has already been encountered somewhere.
 				// If that is the case, we can skip it.
@@ -191,13 +191,13 @@ namespace liblistfile.NodeTree
 				// If the part is the final part, then it is almost guaranteed to be a file - if not, a directory.
 				// Since listfiles do not support empty directories, we're not checking for extensions here. If
 				// a part is last, then it is by definition a file.
-				NodeType nodeType = isPartLastInPath ? NodeType.File : NodeType.Directory;
+				var nodeType = isPartLastInPath ? NodeType.File : NodeType.Directory;
 
 				// We'll also store the type of file that's referenced for later use.
-				WarcraftFileType fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : FileInfoUtilities.GetFileType(pathParts[i]);
+				var fileType = nodeType == NodeType.Directory ? WarcraftFileType.Directory : FileInfoUtilities.GetFileType(pathParts[i]);
 
 				// -2 is used here to denote a missing but existing name that is to be filled in later.
-				Node node = new Node
+				var node = new Node
 				{
 					Type = nodeType,
 					FileType = fileType,
@@ -232,12 +232,12 @@ namespace liblistfile.NodeTree
 		/// <param name="initialParentIdentifier">The start of the chain.</param>
 		protected void AddTypeToParentChain(WarcraftFileType fileType, NodeIdentifier initialParentIdentifier)
 		{
-			NodeIdentifier currentParentIdentifier = initialParentIdentifier;
+			var currentParentIdentifier = initialParentIdentifier;
 
-			bool hasParent = true;
+			var hasParent = true;
 			while (hasParent)
 			{
-				Node currentNode = this.Nodes[currentParentIdentifier];
+				var currentNode = this.Nodes[currentParentIdentifier];
 				if (currentNode.FileType.HasFlag(fileType))
 				{
 					// Early escape - if a parent is already tagged with the file type, then all
@@ -271,16 +271,16 @@ namespace liblistfile.NodeTree
 			// 1: Buld nodes (done in CreateNode)
 			// 2: Build name block
 
-			Dictionary<string, long> relativeNameOffsets = new Dictionary<string, long>();
-			using (MemoryStream ms = new MemoryStream())
-			using (BinaryWriter bw = new BinaryWriter(ms))
+			var relativeNameOffsets = new Dictionary<string, long>();
+			using (var ms = new MemoryStream())
+			using (var bw = new BinaryWriter(ms))
 			{
-				int currentNameBlockOffset = 0;
-				foreach (string name in this.Names)
+				var currentNameBlockOffset = 0;
+				foreach (var name in this.Names)
 				{
 					relativeNameOffsets.Add(name, currentNameBlockOffset);
 
-					int storedNameLength = name.Length + 1;
+					var storedNameLength = name.Length + 1;
 					bw.WriteNullTerminatedString(name);
 
 					currentNameBlockOffset += storedNameLength;
@@ -323,8 +323,8 @@ namespace liblistfile.NodeTree
 				// Skip the root node, it has no name
 				if (node.Value.NameOffset == -2)
 				{
-					string nodeName = node.Key.GetNodeName();
-					long nameOffset = this.AbsoluteNameOffsets[nodeName];
+					var nodeName = node.Key.GetNodeName();
+					var nameOffset = this.AbsoluteNameOffsets[nodeName];
 
 					node.Value.NameOffset = nameOffset;
 				}
@@ -332,8 +332,8 @@ namespace liblistfile.NodeTree
 				if (node.Value.NameOffset == -3)
 				{
 					// Use the package name as the node name instead
-					string nodeName = node.Key.Package;
-					long nameOffset = this.AbsoluteNameOffsets[nodeName];
+					var nodeName = node.Key.Package;
+					var nameOffset = this.AbsoluteNameOffsets[nodeName];
 
 					node.Value.NameOffset = nameOffset;
 				}
@@ -362,8 +362,8 @@ namespace liblistfile.NodeTree
 		/// <returns></returns>
 		public byte[] CreateTree()
 		{
-			MemoryStream outputStream = new MemoryStream();
-			using (BinaryWriter bw = new BinaryWriter(outputStream, Encoding.Default, true))
+			var outputStream = new MemoryStream();
+			using (var bw = new BinaryWriter(outputStream, Encoding.Default, true))
 			{
 				// 5.1 Write header
 				bw.Write(OptimizedNodeTree.Version);
@@ -372,7 +372,7 @@ namespace liblistfile.NodeTree
 				bw.Write(this.SortingBlockOffset);
 
 				// 5.2 Write nodes
-				foreach (Node node in this.Nodes.Values)
+				foreach (var node in this.Nodes.Values)
 				{
 					bw.Write(node.Serialize());
 				}
