@@ -2,6 +2,7 @@
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Title>liblistfile</Title>
@@ -29,5 +30,6 @@
   <ItemGroup>
     <PackageReference Include="libwarcraft" Version="2.7.0-CI00062" />
     <PackageReference Include="SharpCompress" Version="0.18.0" />
+    <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
 </Project>
