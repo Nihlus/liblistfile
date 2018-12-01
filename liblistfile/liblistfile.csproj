@@ -3,11 +3,12 @@
     <SignAssembly>true</SignAssembly>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <Title>liblistfile</Title>
     <Authors>Jarl Gullberg</Authors>
-    <Version>2.0.2</Version>
+    <Version>2.1.0</Version>
     <Description>Managed library for generating and optimizing lists and node trees created from lists of file paths..</Description>
     <Copyright>Copyright Jarl Gullberg 2017</Copyright>
   </PropertyGroup>
@@ -28,7 +29,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="libwarcraft" Version="2.7.0-CI00062" />
+    <PackageReference Include="libwarcraft" Version="2.7.0" />
     <PackageReference Include="SharpCompress" Version="0.18.0" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>

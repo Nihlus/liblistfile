@@ -186,7 +186,7 @@ namespace liblistfile.NodeTree
 
 			if (nodeType == NodeType.File)
 			{
-				var fileInfo = package.GetFileInfo(path);
+				/*var fileInfo = package.GetFileInfo(path);
 				if (fileInfo == null)
 				{
 					nodeType |= NodeType.Nonexistent;
@@ -194,7 +194,7 @@ namespace liblistfile.NodeTree
 				else if (fileInfo.IsDeleted)
 				{
 					nodeType |= NodeType.Deleted;
-				}
+				}*/
 			}
 
 			// We'll also store the type of file that's referenced for later use.
