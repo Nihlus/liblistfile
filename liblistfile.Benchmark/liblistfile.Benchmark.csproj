@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
+      <PackageReference Include="Moq" Version="4.10.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Data\sample-data.txt" />
+      <EmbeddedResource Include="Data\sample-data.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\liblistfile\liblistfile.csproj" />
+    </ItemGroup>
+
+</Project>

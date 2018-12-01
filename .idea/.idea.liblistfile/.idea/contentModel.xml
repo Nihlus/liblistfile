@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ContentModelStore">
-    <e p="$USER_HOME$/.Rider2018.1/system/resharper-host/local/Transient/ReSharperHost/v12/SolutionCaches/_liblistfile.-88005738.00" t="ExcludeRecursive" />
+    <e p="$APPLICATION_CONFIG_DIR$/consoles/db" t="IncludeRecursive" />
+    <e p="$APPLICATION_CONFIG_DIR$/extensions" t="IncludeRecursive" />
+    <e p="$APPLICATION_CONFIG_DIR$/scratches" t="IncludeRecursive" />
+    <e p="$USER_HOME$/.Rider2018.3/system/extResources" t="IncludeRecursive" />
+    <e p="$USER_HOME$/.Rider2018.3/system/resharper-host/local/Transient/ReSharperHost/v183/SolutionCaches/_liblistfile.-88005738.00" t="ExcludeRecursive" />
     <e p="$PROJECT_DIR$" t="IncludeFlat">
+      <e p=".git/info/exclude" t="IncludeRecursive" />
       <e p="liblistfile" t="IncludeRecursive">
         <e p="ByteArrayComparer.cs" t="Include" />
         <e p="Dictionary" t="Include">
@@ -32,11 +37,33 @@
         <e p="bin" t="ExcludeRecursive" />
         <e p="liblistfile.csproj" t="IncludeRecursive" />
         <e p="obj" t="ExcludeRecursive">
-          <e p="x86" t="Include">
-            <e p="Debug" t="Include">
-              <e p="netstandard2.0" t="Include">
-                <e p="liblistfile.AssemblyInfo.cs" t="Include" />
-              </e>
+          <e p="Release" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="liblistfile.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
+      <e p="liblistfile.Benchmark" t="IncludeRecursive">
+        <e p="Benchmark.cs" t="Include" />
+        <e p="BenchmarkDotNet.Artifacts" t="Include">
+          <e p="liblistfile.Benchmark.Benchmark.log" t="Include" />
+          <e p="results" t="Include">
+            <e p="liblistfile.Benchmark.Benchmark-report-github.md" t="Include" />
+            <e p="liblistfile.Benchmark.Benchmark-report.csv" t="Include" />
+            <e p="liblistfile.Benchmark.Benchmark-report.html" t="Include" />
+          </e>
+        </e>
+        <e p="Data" t="Include">
+          <e p="sample-data.txt" t="Include" />
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="liblistfile.Benchmark.csproj" t="IncludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Release" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="liblistfile.Benchmark.AssemblyInfo.cs" t="Include" />
             </e>
           </e>
         </e>
