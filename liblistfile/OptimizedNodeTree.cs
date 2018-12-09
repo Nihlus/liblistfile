@@ -48,7 +48,10 @@ namespace liblistfile
 		private readonly long NodesOffset;
 		private readonly long NamesOffset;
 
-		private readonly string TreeLocation;
+		/// <summary>
+		/// The size of the header of the tree.
+		/// </summary>
+		public const long HeaderSize = sizeof(uint) + sizeof(long) * 2;
 
 		private readonly object ReaderLock = new object();
 		private readonly BinaryReader TreeReader;

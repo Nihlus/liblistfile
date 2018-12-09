@@ -40,7 +40,7 @@ namespace liblistfile.NodeTree
 			Common constants
 		*/
 
-		private const long HeaderSize = sizeof(uint) + sizeof(long) * 3;
+		private const long HeaderSize = sizeof(uint) + sizeof(long) * 2;
 
 		/*
 			Internal transient register data
