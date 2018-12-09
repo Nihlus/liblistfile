@@ -1,27 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <DebugSymbols>true</DebugSymbols>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <Title>liblistfile</Title>
-    <Authors>Jarl Gullberg</Authors>
     <Version>3.0.0-rc5</Version>
-    <Description>Managed library for generating and optimizing lists and node trees created from lists of file paths..</Description>
-    <Copyright>Copyright Jarl Gullberg 2017</Copyright>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PackageId>liblistfile</PackageId>
-    <PackageLicense>https://www.gnu.org/licenses/gpl-3.0.en.html</PackageLicense>
-    <PackageProjectUrl>http://wowdev.tools/</PackageProjectUrl>
-    <PackageReleaseNotes>Update packages.</PackageReleaseNotes>
-    <PackageTags>cross-platform;file-format</PackageTags>
-    <PackageOutputPath>../nuget</PackageOutputPath>
-    <IncludeSymbols>true</IncludeSymbols>
-    <RepositoryUrl>https://github.com/Nihlus/liblistfile</RepositoryUrl>
+    <PackageReleaseNotes>Move tree generation code to a new library.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Dictionary\dictionary.dic">
@@ -33,4 +19,8 @@
     <PackageReference Include="SharpCompress" Version="0.18.0" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
+  <Import Project="..\props\common.props" />
+  <Import Project="$(SolutionRoot)\props\nuget-common.props" />
+  <Import Project="$(SolutionRoot)\props\netfx-mono.props" />
+  <Import Project="$(SolutionRoot)\props\stylecop.props" />
 </Project>

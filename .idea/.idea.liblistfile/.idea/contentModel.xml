@@ -8,6 +8,7 @@
     <e p="$USER_HOME$/.Rider2018.3/system/resharper-host/local/Transient/ReSharperHost/v183/SolutionCaches/_liblistfile.-88005738.00" t="ExcludeRecursive" />
     <e p="$PROJECT_DIR$" t="IncludeFlat">
       <e p=".git/info/exclude" t="IncludeRecursive" />
+      <e p=".gitignore" t="Include" />
       <e p="liblistfile" t="IncludeRecursive">
         <e p="ByteArrayComparer.cs" t="Include" />
         <e p="Dictionary" t="Include">
@@ -18,7 +19,6 @@
         <e p="ListfileDictionaryEntry.cs" t="Include" />
         <e p="OptimizedList.cs" t="Include" />
         <e p="OptimizedListContainer.cs" t="Include" />
-        <e p="PathUtilities.cs" t="Include" />
         <e p="Score" t="Include">
           <e p="TermScore.cs" t="Include" />
         </e>
@@ -32,25 +32,16 @@
           </e>
         </e>
       </e>
-      <e p="liblistfile.Benchmark" t="IncludeRecursive">
-        <e p="Benchmark.cs" t="Include" />
-        <e p="Data" t="Include">
-          <e p="big-sample-data.txt" t="Include" />
-          <e p="sample-data.txt" t="Include" />
-        </e>
-        <e p="Program.cs" t="Include" />
-        <e p="bin" t="ExcludeRecursive" />
-        <e p="liblistfile.Benchmark.csproj" t="IncludeRecursive" />
-        <e p="obj" t="ExcludeRecursive">
-          <e p="Release" t="Include">
-            <e p="netcoreapp2.1" t="Include">
-              <e p="liblistfile.Benchmark.AssemblyInfo.cs" t="Include" />
-            </e>
-          </e>
-        </e>
-      </e>
       <e p="liblistfile.sln" t="IncludeFlat" />
       <e p="packages" t="ExcludeRecursive" />
+      <e p="props" t="Include">
+        <e p="common.props" t="Include" />
+        <e p="netfx-mono.props" t="Include" />
+        <e p="nuget-common.props" t="Include" />
+        <e p="stylecop.props" t="Include" />
+      </e>
+      <e p="stylecop.json" t="Include" />
+      <e p="stylecop.ruleset" t="Include" />
     </e>
   </component>
   <component name="RiderRiderContentModelStore">

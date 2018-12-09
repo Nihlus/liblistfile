@@ -1,6 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
+
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "metadata", ".\", "{F1A57014-71CE-4032-A652-01B7E35E14DB}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		stylecop.json = stylecop.json
+		stylecop.ruleset = stylecop.ruleset
+	EndProjectSection
+EndProject
+
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "props", ".\props", "{47E747E8-1D9C-447A-BBA8-EFA5E38E948C}"
+	ProjectSection(SolutionItems) = preProject
+		props\common.props = props\common.props
+		props\nuget-common.props = props\nuget-common.props
+		props\netfx-mono.props = props\netfx-mono.props
+		props\stylecop.props = props\stylecop.props
+	EndProjectSection
+EndProject
+
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "liblistfile", "liblistfile\liblistfile.csproj", "{CE32160A-4A61-4813-93A5-D9DFDD7AB470}"
 EndProject
 Global

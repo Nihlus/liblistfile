@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <HasCommonProperties>true</HasCommonProperties>
+    <Copyright>Jarl Gullberg 2018</Copyright>
+    <Description>Managed library for generating and optimizing lists of file paths.</Description>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SolutionRoot>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)\..))</SolutionRoot>
+  </PropertyGroup>
+</Project>

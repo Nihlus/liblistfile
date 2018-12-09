@@ -34,12 +34,12 @@ namespace liblistfile
     /// An optimized list of file paths.
     /// Each OptimizedList entry (when serialized) is structured as follows:
     ///
-    /// char[4]						: Signature (always LIST)
-    /// uint64_t					: BlockSize (byte count, always CompressedData + 64)
-    /// int128_t					: PackageHash (MD5 hash of the package the list works for.) 16 bytes.
-    /// int128_t					: ListHash (MD5 hash of the compressed optimized list.) 16 bytes.
-    /// byte[]						: BZip2 compressed cleartext list of optimized
-    ///							 	  list entries.
+    /// char[4]                        : Signature (always LIST)
+    /// uint64_t                    : BlockSize (byte count, always CompressedData + 64)
+    /// int128_t                    : PackageHash (MD5 hash of the package the list works for.) 16 bytes.
+    /// int128_t                    : ListHash (MD5 hash of the compressed optimized list.) 16 bytes.
+    /// byte[]                        : BZip2 compressed cleartext list of optimized
+    ///                                   list entries.
     /// </summary>
     public class OptimizedList : IEquatable<OptimizedList>, IBinarySerializable, IIFFChunk
     {
@@ -89,12 +89,12 @@ namespace liblistfile
         }
 
 
-	    /// <summary>
-	    /// Deserialzes the provided binary data of the object. This is the full data block which follows the data
-	    /// signature and data block length.
-	    /// </summary>
-	    /// <param name="inData">The binary data containing the object.</param>
-	    public void LoadBinaryData(byte[] inData)
+        /// <summary>
+        /// Deserialzes the provided binary data of the object. This is the full data block which follows the data
+        /// signature and data block length.
+        /// </summary>
+        /// <param name="inData">The binary data containing the object.</param>
+        public void LoadBinaryData(byte[] inData)
         {
             using (var ms = new MemoryStream(inData))
             {
@@ -131,11 +131,11 @@ namespace liblistfile
             }
         }
 
-	    /// <summary>
-	    /// Gets the static data signature of this data block type.
-	    /// </summary>
-	    /// <returns>A string representing the block signature.</returns>
-	    public string GetSignature()
+        /// <summary>
+        /// Gets the static data signature of this data block type.
+        /// </summary>
+        /// <returns>A string representing the block signature.</returns>
+        public string GetSignature()
         {
             return Signature;
         }
