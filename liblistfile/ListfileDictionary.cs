@@ -25,6 +25,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using ListFile.Score;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.BZip2;
@@ -47,22 +48,26 @@ namespace ListFile
     ///
     /// Only one version of the file format is supported at any given time.
     /// </summary>
+    [PublicAPI]
     public class ListfileDictionary : IBinarySerializable
     {
         /// <summary>
         /// The binary file signature. Used when serializing this object into an RIFF-style
         /// format.
         /// </summary>
+        [PublicAPI, NotNull]
         public const string Signature = "DICT";
 
         /// <summary>
         /// The file extension used for serialized list containers.
         /// </summary>
+        [PublicAPI, NotNull]
         public const string Extension = "dic";
 
         /// <summary>
         /// The file format version.
         /// </summary>
+        [PublicAPI]
         public const uint Version = 2;
 
         /// <summary>
@@ -70,6 +75,7 @@ namespace ListFile
         /// considered high-scoring.
         /// </summary>
         /// <value>The entry score tolerance.</value>
+        [PublicAPI]
         public float EntryLowScoreTolerance
         {
             get;
@@ -81,6 +87,7 @@ namespace ListFile
         /// considered high-scoring.
         /// </summary>
         /// <value>The entry score tolerance.</value>
+        [PublicAPI]
         public float EntryHighScoreTolerance
         {
             get;
@@ -101,6 +108,7 @@ namespace ListFile
         /// Gets the entries which have a low score.
         /// </summary>
         /// <value>The entries with a low score.</value>
+        [PublicAPI, NotNull]
         public IEnumerable<KeyValuePair<string, ListfileDictionaryEntry>> LowScoreEntries
         {
             get
@@ -113,6 +121,7 @@ namespace ListFile
         /// Gets the entries which have a high score.
         /// </summary>
         /// <value>The entries with a low score.</value>
+        [PublicAPI, NotNull]
         public IEnumerable<KeyValuePair<string, ListfileDictionaryEntry>> HighScoreEntries
         {
             get
@@ -124,6 +133,7 @@ namespace ListFile
         /// <summary>
         /// Gets the dictionary words, extracted from the high-scoring entries.
         /// </summary>
+        [PublicAPI, NotNull, ItemNotNull]
         public List<string> DictionaryWords { get; } = new List<string>();
 
         private static readonly Regex WordsRegex = new Regex("([a-zA-Z]{4,})", RegexOptions.Compiled);
@@ -134,6 +144,7 @@ namespace ListFile
         /// Initializes a new instance of the <see cref="ListfileDictionary"/> class.
         /// This constructor creates a new, empty dictionary.
         /// </summary>
+        [PublicAPI]
         public ListfileDictionary()
         {
             EntryLowScoreTolerance = 0.0f;
@@ -145,7 +156,8 @@ namespace ListFile
         /// This constructor loads an existing dictionary from a byte array.
         /// </summary>
         /// <param name="data">Data.</param>
-        public ListfileDictionary(byte[] data)
+        [PublicAPI]
+        public ListfileDictionary([NotNull] byte[] data)
             : this()
         {
             using (var ms = new MemoryStream(data))
@@ -160,7 +172,8 @@ namespace ListFile
         /// <param name="dataStream">The stream to load the dictionary from.</param>
         /// <param name="ct">The cancellation token to use.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task LoadFromStreamAsync(Stream dataStream, CancellationToken ct = default)
+        [PublicAPI, NotNull]
+        public async Task LoadFromStreamAsync([NotNull] Stream dataStream, CancellationToken ct = default)
         {
             await Task.Run(() => LoadFromStream(dataStream, ct), ct);
         }
@@ -170,7 +183,8 @@ namespace ListFile
         /// </summary>
         /// <param name="dataStream">The stream to load the dictionary from.</param>
         /// <param name="ct">The cancellation token to use.</param>
-        public void LoadFromStream(Stream dataStream, CancellationToken ct = default)
+        [PublicAPI]
+        public void LoadFromStream([NotNull] Stream dataStream, CancellationToken ct = default)
         {
             using (var br = new BinaryReader(dataStream))
             {
@@ -184,57 +198,32 @@ namespace ListFile
 
                 if (dataVersion < Version)
                 {
-                    if (dataVersion < 2)
-                    {
-                        // Version 2 started compressing the dictionary block
-                        var recordCount = br.ReadUInt64();
-                        for (ulong i = 0; i < recordCount; ++i)
-                        {
-                            ct.ThrowIfCancellationRequested();
-
-                            var entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
-                            _dictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
-                        }
-                    }
-
-                    // Perform any extra actions required
-                    if (dataVersion == 0)
-                    {
-                        // From version 0 and up, the score calculation was altered. Recalculate all scores.
-                        foreach (var entry in _dictionaryEntries)
-                        {
-                            ct.ThrowIfCancellationRequested();
-
-                            entry.Value.RecalculateScore();
-                        }
-                    }
+                    throw new NotSupportedException();
                 }
-                else
+
+                // The most current implementation
+                var recordCount = br.ReadUInt64();
+                var recordBlockSize = br.ReadUInt64();
+
+                using (var compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
                 {
-                    // The most current implementation
-                    var recordCount = br.ReadUInt64();
-                    var recordBlockSize = br.ReadUInt64();
-
-                    using (var compressedData = new MemoryStream(br.ReadBytes((int)recordBlockSize)))
+                    using (var bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
                     {
-                        using (var bz = new BZip2Stream(compressedData, CompressionMode.Decompress, true))
+                        using (var decompressedData = new MemoryStream())
                         {
-                            using (var decompressedData = new MemoryStream())
+                            // Decompress the data into the stream
+                            bz.CopyTo(decompressedData);
+
+                            // Read the dictionary elements
+                            decompressedData.Position = 0;
+                            using (var zr = new BinaryReader(decompressedData))
                             {
-                                // Decompress the data into the stream
-                                bz.CopyTo(decompressedData);
-
-                                // Read the dictionary elements
-                                decompressedData.Position = 0;
-                                using (var zr = new BinaryReader(decompressedData))
+                                for (ulong i = 0; i < recordCount; ++i)
                                 {
-                                    for (ulong i = 0; i < recordCount; ++i)
-                                    {
-                                        ct.ThrowIfCancellationRequested();
+                                    ct.ThrowIfCancellationRequested();
 
-                                        var entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
-                                        _dictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
-                                    }
+                                    var entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
+                                    _dictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
                                 }
                             }
                         }
@@ -258,7 +247,8 @@ namespace ListFile
         /// </summary>
         /// <param name="term">Term.</param>
         /// <param name="bSortDictionary">Whether or not the dictionary should be sorted after words have been added.</param>
-        public void AddNewTermWords(string term, bool bSortDictionary = true)
+        [PublicAPI]
+        public void AddNewTermWords([NotNull] string term, bool bSortDictionary = true)
         {
             foreach (var word in GetWordsFromTerm(Path.GetFileNameWithoutExtension(term)))
             {
@@ -279,7 +269,8 @@ namespace ListFile
         /// </summary>
         /// <param name="term">Term.</param>
         /// <returns>The guessed term.</returns>
-        public string Guess(string term)
+        [PublicAPI, NotNull]
+        public string Guess([NotNull] string term)
         {
             if (string.IsNullOrEmpty(term))
             {
@@ -329,7 +320,8 @@ namespace ListFile
         /// </summary>
         /// <returns>The scored.</returns>
         /// <param name="term">Term.</param>
-        public string GuessScored(string term)
+        [PublicAPI, NotNull]
+        public string GuessScored([NotNull] string term)
         {
             var transientTerm = Guess(term);
             var scoredTransientTerm = TermScore.Guess(transientTerm.AsSpan());
@@ -343,7 +335,8 @@ namespace ListFile
         /// </summary>
         /// <returns>The optimized list.</returns>
         /// <param name="unoptimizedList">Unoptimized list.</param>
-        public IEnumerable<string> OptimizeList(IEnumerable<string> unoptimizedList)
+        [PublicAPI, NotNull, ItemNotNull]
+        public IEnumerable<string> OptimizeList([NotNull, ItemNotNull] IEnumerable<string> unoptimizedList)
         {
             foreach (var path in unoptimizedList)
             {
@@ -361,7 +354,8 @@ namespace ListFile
         /// </summary>
         /// <param name="path">The path to optimize.</param>
         /// <returns>The optimized path.</returns>
-        public string OptimizePath(string path)
+        [PublicAPI, NotNull]
+        public string OptimizePath([NotNull] string path)
         {
             var sb = new StringBuilder();
 
@@ -402,7 +396,8 @@ namespace ListFile
         /// </summary>
         /// <returns>The words from term.</returns>
         /// <param name="term">Term.</param>
-        public static IEnumerable<string> GetWordsFromTerm(string term)
+        [PublicAPI, NotNull, ItemNotNull]
+        public static IEnumerable<string> GetWordsFromTerm([NotNull] string term)
         {
             var words = new List<string>();
 
@@ -430,7 +425,8 @@ namespace ListFile
         /// </summary>
         /// <returns><c>true</c>, if the dictionary contains the term, <c>false</c> otherwise.</returns>
         /// <param name="cleanTerm">term.</param>
-        public bool ContainsTerm(string cleanTerm)
+        [PublicAPI, Pure]
+        public bool ContainsTerm([NotNull] string cleanTerm)
         {
             return _dictionaryEntries.ContainsKey(cleanTerm.ToUpperInvariant());
         }
@@ -439,7 +435,8 @@ namespace ListFile
         /// Deletes the specified term from the dictionary.
         /// </summary>
         /// <param name="term">The term to delete.</param>
-        public void DeleteTerm(string term)
+        [PublicAPI]
+        public void DeleteTerm([NotNull] string term)
         {
             var termKey = term.ToUpperInvariant();
             if (_dictionaryEntries.ContainsKey(termKey))
@@ -453,21 +450,15 @@ namespace ListFile
         /// </summary>
         /// <returns>The term entry.</returns>
         /// <param name="term">term.</param>
-        public ListfileDictionaryEntry GetTermEntry(string term)
+        [PublicAPI, CanBeNull]
+        public ListfileDictionaryEntry GetTermEntry([NotNull] string term)
         {
-            if (term == null)
-            {
-                return null;
-            }
-
             if (_dictionaryEntries.ContainsKey(Path.GetFileNameWithoutExtension(term).ToUpperInvariant()))
             {
                 return _dictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         /// <summary>
@@ -475,13 +466,9 @@ namespace ListFile
         /// </summary>
         /// <param name="term">term.</param>
         /// <returns>true if the term was added; otherwise, false.</returns>
-        public bool AddTermEntry(string term)
+        [PublicAPI]
+        public bool AddTermEntry([NotNull] string term)
         {
-            if (term == null)
-            {
-                return false;
-            }
-
             var cleanTerm = Path.GetFileNameWithoutExtension(term);
             if (!ContainsTerm(cleanTerm))
             {
@@ -501,22 +488,16 @@ namespace ListFile
         /// </summary>
         /// <param name="term">term.</param>
         /// <returns>true if the term was updated; otherwise, false.</returns>
-        public bool UpdateTermEntry(string term)
+        [PublicAPI]
+        public bool UpdateTermEntry([NotNull] string term)
         {
-            if (term == null)
-            {
-                return false;
-            }
-
             var cleanTerm = Path.GetFileNameWithoutExtension(term);
             if (!ContainsTerm(cleanTerm))
             {
                 return AddTermEntry(cleanTerm);
             }
-            else
-            {
-                return _dictionaryEntries[cleanTerm.ToUpperInvariant()].UpdateTerm(cleanTerm);
-            }
+
+            return _dictionaryEntries[cleanTerm.ToUpperInvariant()].UpdateTerm(cleanTerm);
         }
 
         /// <summary>
@@ -525,13 +506,9 @@ namespace ListFile
         /// <param name="term">term.</param>
         /// <param name="score">Score.</param>
         /// <returns>true if the score was set; otherwise, false.</returns>
-        public bool SetTermScore(string term, float score)
+        [PublicAPI]
+        public bool SetTermScore([NotNull] string term, float score)
         {
-            if (term == null)
-            {
-                return false;
-            }
-
             var cleanTerm = Path.GetFileNameWithoutExtension(term);
             if (!ContainsTerm(cleanTerm))
             {
@@ -596,6 +573,7 @@ namespace ListFile
         }
 
         /// <inheritdoc />
+        [NotNull]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream())

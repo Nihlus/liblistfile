@@ -18,6 +18,7 @@
 //
 
 using System;
+using JetBrains.Annotations;
 
 namespace ListFile.Score
 {
@@ -32,6 +33,7 @@ namespace ListFile.Score
     /// Overall, the score is merely an indication and doesn't reliably detect proper PascalCase,
     /// since it doesn't know anything about actual words. However, it's good enough for most purposes.
     /// </summary>
+    [PublicAPI]
     public static class TermScore
     {
         /// <summary>
@@ -43,6 +45,7 @@ namespace ListFile.Score
         /// <param name="word">Word.</param>
         /// <param name="strict">Whether or not the score should be strict in its calculation.</param>
         /// <returns>The score of the word.</returns>
+        [PublicAPI, Pure]
         public static float Calculate(ReadOnlySpan<char> word, bool strict = false)
         {
             var score = 0.0f;
@@ -86,6 +89,7 @@ namespace ListFile.Score
         /// </summary>
         /// <param name="word">Word.</param>
         /// <returns>The guessed casing.</returns>
+        [PublicAPI, Pure]
         public static ReadOnlySpan<char> Guess(ReadOnlySpan<char> word)
         {
             Span<char> transientWord;
@@ -199,6 +203,7 @@ namespace ListFile.Score
         /// </summary>
         /// <returns><c>true</c> if the specified string is all upper-case; otherwise, <c>false</c>.</returns>
         /// <param name="str">String.</param>
+        [PublicAPI, Pure]
         public static bool IsAllUpper(this ReadOnlySpan<char> str)
         {
             foreach (var c in str)
@@ -217,6 +222,7 @@ namespace ListFile.Score
         /// </summary>
         /// <returns><c>true</c> if the specified string is all lower-case; otherwise, <c>false</c>.</returns>
         /// <param name="str">String.</param>
+        [PublicAPI, Pure]
         public static bool IsAllLower(this ReadOnlySpan<char> str)
         {
             foreach (var c in str)
@@ -235,6 +241,7 @@ namespace ListFile.Score
         /// </summary>
         /// <returns><c>true</c> if is file the specified str; otherwise, <c>false</c>.</returns>
         /// <param name="str">String.</param>
+        [PublicAPI, Pure]
         public static bool IsFilename(this ReadOnlySpan<char> str)
         {
             return str.Contains(".".AsSpan(), StringComparison.Ordinal);
@@ -245,6 +252,7 @@ namespace ListFile.Score
         /// </summary>
         /// <returns><c>true</c> if is filename all upper the specified str; otherwise, <c>false</c>.</returns>
         /// <param name="str">String.</param>
+        [PublicAPI, Pure]
         public static ReadOnlySpan<char> GetFilename(this ReadOnlySpan<char> str)
         {
             if (str.IsFilename())
@@ -266,6 +274,7 @@ namespace ListFile.Score
         /// </summary>
         /// <returns><c>true</c> if the specified string is mixed-case; otherwise, <c>false</c>.</returns>
         /// <param name="str">String.</param>
+        [PublicAPI, Pure]
         public static bool IsMixedCase(this ReadOnlySpan<char> str)
         {
             return !str.IsAllLower() && !str.IsAllUpper();
@@ -276,6 +285,7 @@ namespace ListFile.Score
         /// </summary>
         /// <returns><c>true</c> if the specified string has more than one upper-case letter; otherwise, <c>false</c>.</returns>
         /// <param name="str">String.</param>
+        [PublicAPI, Pure]
         public static bool HasMoreThanOneVersal(this ReadOnlySpan<char> str)
         {
             var versalCount = 0;
@@ -300,6 +310,7 @@ namespace ListFile.Score
         /// </summary>
         /// <returns><c>true</c> if the specified string starts with a single upper-case letter; otherwise, <c>false</c>.</returns>
         /// <param name="str">String.</param>
+        [PublicAPI, Pure]
         public static bool StartsWithSingleUpper(this ReadOnlySpan<char> str)
         {
             if (str.Length > 0)

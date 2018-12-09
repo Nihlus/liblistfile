@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using JetBrains.Annotations;
 using ListFile.Score;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
@@ -35,12 +36,14 @@ namespace ListFile
     ///
     /// One entry represents a term an an associated score.
     /// </summary>
+    [PublicAPI]
     public class ListfileDictionaryEntry : IBinarySerializable
     {
         /// <summary>
         /// Gets the current best term.
         /// </summary>
         /// <value>The term.</value>
+        [PublicAPI, NotNull]
         public string Term
         {
             get;
@@ -51,6 +54,7 @@ namespace ListFile
         /// Gets the score of the current term.
         /// </summary>
         /// <value>The score.</value>
+        [PublicAPI]
         public float Score
         {
             get;
@@ -62,7 +66,8 @@ namespace ListFile
         /// </summary>
         /// <param name="inTerm">The input term.</param>
         /// <param name="inScore">In score.</param>
-        public ListfileDictionaryEntry(string inTerm, float inScore)
+        [PublicAPI]
+        public ListfileDictionaryEntry([NotNull] string inTerm, float inScore)
         {
             Term = inTerm;
             Score = inScore;
@@ -73,7 +78,8 @@ namespace ListFile
         /// </summary>
         /// <returns><c>true</c>, if the term was updated, <c>false</c> otherwise.</returns>
         /// <param name="term">Term.</param>
-        public bool UpdateTerm(string term)
+        [PublicAPI]
+        public bool UpdateTerm([NotNull] string term)
         {
             var newTermScore = TermScore.Calculate(term.AsSpan());
             if (Score < newTermScore)
@@ -91,7 +97,8 @@ namespace ListFile
         /// Forcibly sets the term value.
         /// </summary>
         /// <param name="term">The term.</param>
-        public void SetTerm(string term)
+        [PublicAPI]
+        public void SetTerm([NotNull] string term)
         {
             Term = term;
         }
@@ -100,6 +107,7 @@ namespace ListFile
         /// Forcibly sets the score of the term.
         /// </summary>
         /// <param name="score">The score.</param>
+        [PublicAPI]
         public void SetScore(float score)
         {
             Score = score;
@@ -108,6 +116,7 @@ namespace ListFile
         /// <summary>
         /// Recalculates the score of the term.
         /// </summary>
+        [PublicAPI]
         public void RecalculateScore()
         {
             Score = TermScore.Calculate(Term.AsSpan());
@@ -117,6 +126,7 @@ namespace ListFile
         /// Serializes the object into a byte array.
         /// </summary>
         /// <returns>The bytes.</returns>
+        [PublicAPI, NotNull]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream(Term.Length + 1 + 4))

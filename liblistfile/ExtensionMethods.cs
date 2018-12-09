@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using JetBrains.Annotations;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
@@ -30,6 +31,7 @@ namespace ListFile
     /// <summary>
     /// A set of extension methods used for serialization.
     /// </summary>
+    [PublicAPI]
     public static class ExtensionMethods
     {
         /// <summary>
@@ -37,7 +39,8 @@ namespace ListFile
         /// </summary>
         /// <returns>The hash.</returns>
         /// <param name="byteArray">Byte array.</param>
-        public static byte[] ComputeHash(this byte[] byteArray)
+        [PublicAPI, NotNull, Pure]
+        public static byte[] ComputeHash([NotNull] this byte[] byteArray)
         {
             using (var md5 = MD5.Create())
             {
@@ -50,7 +53,8 @@ namespace ListFile
         /// </summary>
         /// <param name="uncompressedBytes">Uncompressed bytes.</param>
         /// <returns>The uncompressed list.</returns>
-        public static byte[] Compress(this byte[] uncompressedBytes)
+        [PublicAPI, NotNull, Pure]
+        public static byte[] Compress([NotNull] this byte[] uncompressedBytes)
         {
             byte[] compressedBytes;
             if (uncompressedBytes.Length > 0)
@@ -80,7 +84,8 @@ namespace ListFile
         /// </summary>
         /// <param name="inputList">Input list.</param>
         /// <returns>The compressed list.</returns>
-        public static byte[] Compress(this List<string> inputList)
+        [PublicAPI, NotNull, Pure]
+        public static byte[] Compress([NotNull, ItemNotNull] this List<string> inputList)
         {
             return inputList.Serialize().Compress();
         }
@@ -93,7 +98,13 @@ namespace ListFile
         /// <param name="pattern">The pattern to replace.</param>
         /// <param name="replacement">The replacement for the pattern.</param>
         /// <returns>The string, with the pattern replaced.</returns>
-        public static string FastReplaceCaseInsensitive(this string original, string pattern, string replacement)
+        [PublicAPI, NotNull, Pure]
+        public static string FastReplaceCaseInsensitive
+        (
+            [NotNull] this string original,
+            [NotNull] string pattern,
+            [NotNull] string replacement
+        )
         {
             int position0;
             int position1;
@@ -140,7 +151,8 @@ namespace ListFile
         /// </summary>
         /// <param name="stringList">String list.</param>
         /// <returns>The serialized list.</returns>
-        public static byte[] Serialize(this List<string> stringList)
+        [PublicAPI, NotNull, Pure]
+        public static byte[] Serialize([NotNull, ItemNotNull] this List<string> stringList)
         {
             using (var ms = new MemoryStream(stringList.GetSerializedSize()))
             {
@@ -161,7 +173,8 @@ namespace ListFile
         /// </summary>
         /// <returns>The serialized size.</returns>
         /// <param name="stringList">String list.</param>
-        public static int GetSerializedSize(this IEnumerable<string> stringList)
+        [PublicAPI, Pure]
+        public static int GetSerializedSize([NotNull, ItemNotNull] this IEnumerable<string> stringList)
         {
             var listSize = 0;
             foreach (var entry in stringList)

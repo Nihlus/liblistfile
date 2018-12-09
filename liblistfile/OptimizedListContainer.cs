@@ -17,8 +17,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using JetBrains.Annotations;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
@@ -40,40 +42,48 @@ namespace ListFile
     /// OptimizedList[ListCount]    : The lists contained in the file.
     ///
     /// </summary>
+    [PublicAPI]
     public class OptimizedListContainer : IBinarySerializable
     {
         /// <summary>
         /// The binary file signature. Used when serializing this object into an RIFF-style
         /// format.
         /// </summary>
+        [PublicAPI, NotNull]
         public const string Signature = "OLIC";
 
         /// <summary>
         /// The file extension used for serialized list containers.
         /// </summary>
+        [PublicAPI, NotNull]
         public const string Extension = "olc";
 
         /// <summary>
         /// The file format version.
         /// </summary>
+        [PublicAPI]
         public const uint Version = 1;
 
         /// <summary>
         /// Gets the name of the archive this container has lists for.
         /// </summary>
+        [PublicAPI, NotNull]
         public string PackageName { get; }
 
         /// <summary>
         /// Gets the optimized lists contained in this container.
         /// </summary>
-        public Dictionary<byte[], OptimizedList> OptimizedLists { get; } = new Dictionary<byte[], OptimizedList>(new ByteArrayComparer());
+        [PublicAPI]
+        public Dictionary<byte[], OptimizedList> OptimizedLists { get; }
+            = new Dictionary<byte[], OptimizedList>(new ByteArrayComparer());
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OptimizedListContainer"/> class.
         /// This constructor creates a new, empty list container.
         /// </summary>
         /// <param name="inArchiveName">In archive name.</param>
-        public OptimizedListContainer(string inArchiveName)
+        [PublicAPI]
+        public OptimizedListContainer([NotNull] string inArchiveName)
         {
             PackageName = inArchiveName;
         }
@@ -83,7 +93,8 @@ namespace ListFile
         /// This constructor loads an existing list container from a block of bytes.
         /// </summary>
         /// <param name="data">File stream.</param>
-        public OptimizedListContainer(byte[] data)
+        [PublicAPI]
+        public OptimizedListContainer([NotNull] byte[] data)
         {
             using (var ms = new MemoryStream(data))
             {
@@ -96,6 +107,10 @@ namespace ListFile
                     }
 
                     var storedVersion = br.ReadUInt32();
+                    if (storedVersion != Version)
+                    {
+                        throw new NotSupportedException();
+                    }
 
                     PackageName = br.ReadNullTerminatedString();
 
@@ -113,11 +128,6 @@ namespace ListFile
                         var optimizedList = new OptimizedList(br.ReadBytes((int)blockSize));
                         OptimizedLists.Add(optimizedList.PackageHash, optimizedList);
                     }
-
-                    if (storedVersion < Version)
-                    {
-                        // Do whatever updating needs to be done
-                    }
                 }
             }
         }
@@ -127,7 +137,8 @@ namespace ListFile
         /// </summary>
         /// <returns><c>true</c>, if the hash has any lists, <c>false</c> otherwise.</returns>
         /// <param name="packageHash">Package hash.</param>
-        public bool ContainsPackageListfile(byte[] packageHash)
+        [PublicAPI]
+        public bool ContainsPackageListfile([NotNull] byte[] packageHash)
         {
             return OptimizedLists.ContainsKey(packageHash);
         }
@@ -137,17 +148,16 @@ namespace ListFile
         /// </summary>
         /// <returns><c>true</c> if the specifed list is the same as the one which is stored in the container; otherwise, <c>false</c>.</returns>
         /// <param name="inOptimizedList">Optimized list.</param>
-        public bool IsListSameAsStored(OptimizedList inOptimizedList)
+        [PublicAPI]
+        public bool IsListSameAsStored([NotNull] OptimizedList inOptimizedList)
         {
             if (ContainsPackageListfile(inOptimizedList.PackageHash))
             {
                 var optimizedList = OptimizedLists[inOptimizedList.PackageHash];
                 return optimizedList.ListHash.Equals(inOptimizedList.ListHash);
             }
-            else
-            {
-                throw new KeyNotFoundException("The specified package did not have an optimized list stored.");
-            }
+
+            throw new KeyNotFoundException("The specified package did not have an optimized list stored.");
         }
 
         /// <summary>
@@ -155,7 +165,8 @@ namespace ListFile
         /// it is not added.
         /// </summary>
         /// <param name="inOptimizedList">List.</param>
-        public void AddOptimizedList(OptimizedList inOptimizedList)
+        [PublicAPI]
+        public void AddOptimizedList([NotNull] OptimizedList inOptimizedList)
         {
             if (!OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
             {
@@ -167,7 +178,8 @@ namespace ListFile
         /// Replaces the optimized list stored in the container (under the same package hash) with the provided list.
         /// </summary>
         /// <param name="inOptimizedList">List.</param>
-        public void ReplaceOptimizedList(OptimizedList inOptimizedList)
+        [PublicAPI]
+        public void ReplaceOptimizedList([NotNull] OptimizedList inOptimizedList)
         {
             if (OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
             {
@@ -179,6 +191,7 @@ namespace ListFile
         /// Serializes the object into a byte array.
         /// </summary>
         /// <returns>The bytes.</returns>
+        [PublicAPI, NotNull]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream())

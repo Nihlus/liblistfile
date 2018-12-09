@@ -18,6 +18,13 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <AdditionalFiles Include="FodyWeavers.xml">
+      <InProject>false</InProject>
+    </AdditionalFiles>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" PrivateAssets="all" />
+    <PackageReference Include="JetBrainsAnnotations.Fody" Version="2.10.0" PrivateAssets="all" />
     <PackageReference Include="libwarcraft" Version="2.7.0" />
     <PackageReference Include="SharpCompress" Version="0.18.0" />
     <PackageReference Include="System.Memory" Version="4.5.1" />

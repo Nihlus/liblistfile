@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using JetBrains.Annotations;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
@@ -38,27 +39,32 @@ namespace ListFile
     /// byte[]                        : BZip2 compressed cleartext list of optimized
     ///                                   list entries.
     /// </summary>
+    [PublicAPI]
     public class OptimizedList : IEquatable<OptimizedList>, IBinarySerializable, IIFFChunk
     {
         /// <summary>
         /// The binary file signature. Used when serializing this object into an RIFF-style
         /// format.
         /// </summary>
+        [PublicAPI, NotNull]
         public const string Signature = "LIST";
 
         /// <summary>
         /// Gets a 128-bit MD5 hash of the archive this list is made for.
         /// </summary>
+        [PublicAPI, NotNull]
         public byte[] PackageHash { get; private set; } = new byte[16];
 
         /// <summary>
         /// Gets a 128-bit MD5 hash of the compressed list data.
         /// </summary>
+        [PublicAPI, NotNull]
         public byte[] ListHash { get; private set; } = new byte[16];
 
         /// <summary>
         /// Gets the optimized paths contained in this list.
         /// </summary>
+        [PublicAPI]
         public List<string> OptimizedPaths { get; } = new List<string>();
 
         /// <summary>
@@ -67,7 +73,8 @@ namespace ListFile
         /// </summary>
         /// <param name="inPackageHash">In archive signature.</param>
         /// <param name="inOptimizedPaths">In optimized paths.</param>
-        public OptimizedList(byte[] inPackageHash, List<string> inOptimizedPaths)
+        [PublicAPI]
+        public OptimizedList([NotNull] byte[] inPackageHash, [NotNull, ItemNotNull] List<string> inOptimizedPaths)
         {
             PackageHash = inPackageHash;
             OptimizedPaths = inOptimizedPaths;
@@ -80,17 +87,18 @@ namespace ListFile
         /// This constructor loads an existing OptimizedList from a byte array.
         /// </summary>
         /// <param name="inData">Data.</param>
-        public OptimizedList(byte[] inData)
+        [PublicAPI]
+        public OptimizedList([NotNull] byte[] inData)
         {
             LoadBinaryData(inData);
         }
 
         /// <summary>
-        /// Deserialzes the provided binary data of the object. This is the full data block which follows the data
+        /// Deserializes the provided binary data of the object. This is the full data block which follows the data
         /// signature and data block length.
         /// </summary>
         /// <param name="inData">The binary data containing the object.</param>
-        public void LoadBinaryData(byte[] inData)
+        public void LoadBinaryData([NotNull] byte[] inData)
         {
             using (var ms = new MemoryStream(inData))
             {
@@ -131,6 +139,7 @@ namespace ListFile
         /// Gets the static data signature of this data block type.
         /// </summary>
         /// <returns>A string representing the block signature.</returns>
+        [NotNull]
         public string GetSignature()
         {
             return Signature;
@@ -140,6 +149,7 @@ namespace ListFile
         /// Serializes the object into a byte array.
         /// </summary>
         /// <returns>The bytes.</returns>
+        [NotNull]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream())
@@ -176,15 +186,12 @@ namespace ListFile
         /// <see cref="OptimizedList"/>; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
         {
-            var other = obj as OptimizedList;
-            if (other != null)
+            if (obj is OptimizedList other)
             {
                 return Equals(other);
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <summary>
