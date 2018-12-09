@@ -1,10 +1,7 @@
 ﻿//
 //  OptimizedListContainer.cs
 //
-//  Author:
-//       Jarl Gullberg <jarl.gullberg@gmail.com>
-//
-//  Copyright (c) 2016 Jarl Gullberg
+//  Copyright (c) 2018 Jarl Gullberg
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -25,7 +22,7 @@ using System.IO;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
-namespace liblistfile
+namespace ListFile
 {
     /// <summary>
     /// A container for OptimizedList objects.
@@ -62,27 +59,27 @@ namespace liblistfile
         public const uint Version = 1;
 
         /// <summary>
-        /// The name of the archive this container has lists for.
+        /// Gets the name of the archive this container has lists for.
         /// </summary>
-        public readonly string PackageName;
+        public string PackageName { get; }
 
         /// <summary>
-        /// The optimized lists contained in this container.
+        /// Gets the optimized lists contained in this container.
         /// </summary>
-        public readonly Dictionary<byte[], OptimizedList> OptimizedLists = new Dictionary<byte[], OptimizedList>(new ByteArrayComparer());
+        public Dictionary<byte[], OptimizedList> OptimizedLists { get; } = new Dictionary<byte[], OptimizedList>(new ByteArrayComparer());
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="liblistfile.OptimizedListContainer"/> class.
+        /// Initializes a new instance of the <see cref="OptimizedListContainer"/> class.
         /// This constructor creates a new, empty list container.
         /// </summary>
         /// <param name="inArchiveName">In archive name.</param>
         public OptimizedListContainer(string inArchiveName)
         {
-            this.PackageName = inArchiveName;
+            PackageName = inArchiveName;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="liblistfile.OptimizedListContainer"/> class.
+        /// Initializes a new instance of the <see cref="OptimizedListContainer"/> class.
         /// This constructor loads an existing list container from a block of bytes.
         /// </summary>
         /// <param name="data">File stream.</param>
@@ -100,7 +97,7 @@ namespace liblistfile
 
                     var storedVersion = br.ReadUInt32();
 
-                    this.PackageName = br.ReadNullTerminatedString();
+                    PackageName = br.ReadNullTerminatedString();
 
                     var entryCount = br.ReadUInt32();
                     for (var i = 0; i < entryCount; ++i)
@@ -110,10 +107,11 @@ namespace liblistfile
                         {
                             throw new InvalidDataException("The input data did not begin with a list signature.");
                         }
+
                         var blockSize = br.ReadUInt64();
 
-                        var optimizedList = new OptimizedList(br.ReadBytes((int)(blockSize)));
-                        this.OptimizedLists.Add(optimizedList.PackageHash, optimizedList);
+                        var optimizedList = new OptimizedList(br.ReadBytes((int)blockSize));
+                        OptimizedLists.Add(optimizedList.PackageHash, optimizedList);
                     }
 
                     if (storedVersion < Version)
@@ -131,7 +129,7 @@ namespace liblistfile
         /// <param name="packageHash">Package hash.</param>
         public bool ContainsPackageListfile(byte[] packageHash)
         {
-            return this.OptimizedLists.ContainsKey(packageHash);
+            return OptimizedLists.ContainsKey(packageHash);
         }
 
         /// <summary>
@@ -143,7 +141,7 @@ namespace liblistfile
         {
             if (ContainsPackageListfile(inOptimizedList.PackageHash))
             {
-                var optimizedList = this.OptimizedLists[inOptimizedList.PackageHash];
+                var optimizedList = OptimizedLists[inOptimizedList.PackageHash];
                 return optimizedList.ListHash.Equals(inOptimizedList.ListHash);
             }
             else
@@ -159,9 +157,9 @@ namespace liblistfile
         /// <param name="inOptimizedList">List.</param>
         public void AddOptimizedList(OptimizedList inOptimizedList)
         {
-            if (!this.OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
+            if (!OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
             {
-                this.OptimizedLists.Add(inOptimizedList.PackageHash, inOptimizedList);
+                OptimizedLists.Add(inOptimizedList.PackageHash, inOptimizedList);
             }
         }
 
@@ -171,9 +169,9 @@ namespace liblistfile
         /// <param name="inOptimizedList">List.</param>
         public void ReplaceOptimizedList(OptimizedList inOptimizedList)
         {
-            if (this.OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
+            if (OptimizedLists.ContainsKey(inOptimizedList.PackageHash))
             {
-                this.OptimizedLists[inOptimizedList.PackageHash] = inOptimizedList;
+                OptimizedLists[inOptimizedList.PackageHash] = inOptimizedList;
             }
         }
 
@@ -191,11 +189,12 @@ namespace liblistfile
                     {
                         bw.Write(c);
                     }
-                    bw.Write(Version);
-                    bw.WriteNullTerminatedString(this.PackageName);
-                    bw.Write((uint)this.OptimizedLists.Count);
 
-                    foreach (var listPair in this.OptimizedLists)
+                    bw.Write(Version);
+                    bw.WriteNullTerminatedString(PackageName);
+                    bw.Write((uint)OptimizedLists.Count);
+
+                    foreach (var listPair in OptimizedLists)
                     {
                         bw.Write(listPair.Value.Serialize());
                     }
@@ -206,4 +205,3 @@ namespace liblistfile
         }
     }
 }
-

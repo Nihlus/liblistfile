@@ -1,10 +1,7 @@
 ﻿//
 //  ExtensionMethods.cs
 //
-//  Author:
-//       Jarl Gullberg <jarl.gullberg@gmail.com>
-//
-//  Copyright (c) 2016 Jarl Gullberg
+//  Copyright (c) 2018 Jarl Gullberg
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -24,12 +21,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
 
-namespace liblistfile
+namespace ListFile
 {
     /// <summary>
     /// A set of extension methods used for serialization.
@@ -53,6 +49,7 @@ namespace liblistfile
         /// Compresses this byte array using a BZip2 algorithm.
         /// </summary>
         /// <param name="uncompressedBytes">Uncompressed bytes.</param>
+        /// <returns>The uncompressed list.</returns>
         public static byte[] Compress(this byte[] uncompressedBytes)
         {
             byte[] compressedBytes;
@@ -82,54 +79,35 @@ namespace liblistfile
         /// The strings are first stored in list order as null-terminated strings.
         /// </summary>
         /// <param name="inputList">Input list.</param>
+        /// <returns>The compressed list.</returns>
         public static byte[] Compress(this List<string> inputList)
         {
             return inputList.Serialize().Compress();
         }
 
         /// <summary>
-        /// Replaces an instance of a string with another inside this string. This replacement
-        /// is case-insensitive.
-        /// </summary>
-        /// <returns>The string with the instance replaced.</returns>
-        /// <param name="input">Input.</param>
-        /// <param name="search">Search.</param>
-        /// <param name="replacement">Replacement.</param>
-        public static string ReplaceCaseInsensitive(this string input, string search, string replacement)
-        {
-            var result = Regex.Replace(
-                                input,
-                                Regex.Escape(search),
-                                replacement.Replace("$", "$$"),
-                                RegexOptions.IgnoreCase
-                            );
-            return result;
-        }
-
-        /// <summary>
         /// Replaces an instance of a string with another inside this string. This replacement is case-insensitive.
         /// Algorithm taken from https://www.codeproject.com/Articles/10890/Fastest-C-Case-Insenstive-String-Replace.
         /// </summary>
-        /// <param name="original"></param>
-        /// <param name="pattern"></param>
-        /// <param name="replacement"></param>
-        /// <returns></returns>
+        /// <param name="original">The original string.</param>
+        /// <param name="pattern">The pattern to replace.</param>
+        /// <param name="replacement">The replacement for the pattern.</param>
+        /// <returns>The string, with the pattern replaced.</returns>
         public static string FastReplaceCaseInsensitive(this string original, string pattern, string replacement)
         {
-            int count;
             int position0;
             int position1;
 
-            count = position0 = 0;
+            var count = position0 = 0;
 
             var upperString = original.ToUpper();
             var upperPattern = pattern.ToUpper();
 
-            var inc = (original.Length / pattern.Length) * (replacement.Length-pattern.Length);
+            var inc = (original.Length / pattern.Length) * (replacement.Length - pattern.Length);
 
             var chars = new char[original.Length + Math.Max(0, inc)];
 
-            while((position1 = upperString.IndexOf(upperPattern, position0, StringComparison.Ordinal)) != -1)
+            while ((position1 = upperString.IndexOf(upperPattern, position0, StringComparison.Ordinal)) != -1)
             {
                 for (var i = position0; i < position1; ++i)
                 {
@@ -158,9 +136,10 @@ namespace liblistfile
         }
 
         /// <summary>
-        /// Serialize the specified stringList.
+        /// Serialize the specified list of strings into a flat array of null-terminated strings.
         /// </summary>
         /// <param name="stringList">String list.</param>
+        /// <returns>The serialized list.</returns>
         public static byte[] Serialize(this List<string> stringList)
         {
             using (var ms = new MemoryStream(stringList.GetSerializedSize()))
@@ -178,7 +157,7 @@ namespace liblistfile
         }
 
         /// <summary>
-        /// Gets the size of the stringlist when it's been serialized.
+        /// Gets the size of the string list when it's been serialized.
         /// </summary>
         /// <returns>The serialized size.</returns>
         /// <param name="stringList">String list.</param>
@@ -194,4 +173,3 @@ namespace liblistfile
         }
     }
 }
-

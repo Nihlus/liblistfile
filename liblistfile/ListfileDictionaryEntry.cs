@@ -1,10 +1,7 @@
 ﻿//
 //  ListfileDictionaryEntry.cs
 //
-//  Author:
-//       Jarl Gullberg <jarl.gullberg@gmail.com>
-//
-//  Copyright (c) 2016 Jarl Gullberg
+//  Copyright (c) 2018 Jarl Gullberg
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,11 +19,11 @@
 
 using System;
 using System.IO;
-using liblistfile.Score;
+using ListFile.Score;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
-namespace liblistfile
+namespace ListFile
 {
     /// <summary>
     /// Listfile dictionary entry.
@@ -35,6 +32,8 @@ namespace liblistfile
     ///
     /// char[]                    : Value (a null-terminated string of a term)
     /// float                    : Score (the score of the term)
+    ///
+    /// One entry represents a term an an associated score.
     /// </summary>
     public class ListfileDictionaryEntry : IBinarySerializable
     {
@@ -59,14 +58,14 @@ namespace liblistfile
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="liblistfile.ListfileDictionaryEntry"/> class.
+        /// Initializes a new instance of the <see cref="ListfileDictionaryEntry"/> class.
         /// </summary>
         /// <param name="inTerm">The input term.</param>
         /// <param name="inScore">In score.</param>
         public ListfileDictionaryEntry(string inTerm, float inScore)
         {
-            this.Term = inTerm;
-            this.Score = inScore;
+            Term = inTerm;
+            Score = inScore;
         }
 
         /// <summary>
@@ -77,10 +76,10 @@ namespace liblistfile
         public bool UpdateTerm(string term)
         {
             var newTermScore = TermScore.Calculate(term.AsSpan());
-            if (this.Score < newTermScore)
+            if (Score < newTermScore)
             {
-                this.Term = term;
-                this.Score = newTermScore;
+                Term = term;
+                Score = newTermScore;
 
                 return true;
             }
@@ -89,21 +88,21 @@ namespace liblistfile
         }
 
         /// <summary>
-        /// Forcibly sets the term.
+        /// Forcibly sets the term value.
         /// </summary>
-        /// <param name="term"></param>
+        /// <param name="term">The term.</param>
         public void SetTerm(string term)
         {
-            this.Term = term;
+            Term = term;
         }
 
         /// <summary>
         /// Forcibly sets the score of the term.
         /// </summary>
-        /// <param name="score"></param>
+        /// <param name="score">The score.</param>
         public void SetScore(float score)
         {
-            this.Score = score;
+            Score = score;
         }
 
         /// <summary>
@@ -111,7 +110,7 @@ namespace liblistfile
         /// </summary>
         public void RecalculateScore()
         {
-            this.Score = TermScore.Calculate(this.Term.AsSpan());
+            Score = TermScore.Calculate(Term.AsSpan());
         }
 
         /// <summary>
@@ -120,12 +119,12 @@ namespace liblistfile
         /// <returns>The bytes.</returns>
         public byte[] Serialize()
         {
-            using (var ms = new MemoryStream(this.Term.Length + 1 + 4))
+            using (var ms = new MemoryStream(Term.Length + 1 + 4))
             {
                 using (var bw = new BinaryWriter(ms))
                 {
-                    bw.WriteNullTerminatedString(this.Term);
-                    bw.Write(this.Score);
+                    bw.WriteNullTerminatedString(Term);
+                    bw.Write(Score);
                 }
 
                 return ms.ToArray();

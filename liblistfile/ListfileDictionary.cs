@@ -1,10 +1,7 @@
 ﻿//
 //  ListfileDictionary.cs
 //
-//  Author:
-//       Jarl Gullberg <jarl.gullberg@gmail.com>
-//
-//  Copyright (c) 2016 Jarl Gullberg
+//  Copyright (c) 2018 Jarl Gullberg
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -20,21 +17,21 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using liblistfile.Score;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ListFile.Score;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
-namespace liblistfile
+namespace ListFile
 {
     /// <summary>
     /// Dictionary file for listtool. Contains a dictionary of terms used in
@@ -47,6 +44,8 @@ namespace liblistfile
     /// uint64_t                        : RecordCount
     /// uint64_t                         : CompressedDictionarySize
     /// byte[CompressedDictionarySize]    : BZip2-compressed block of dictionary entries
+    ///
+    /// Only one version of the file format is supported at any given time.
     /// </summary>
     public class ListfileDictionary : IBinarySerializable
     {
@@ -95,9 +94,8 @@ namespace liblistfile
         /// Key: An all-uppercase term.
         /// Value: A dictionary entry containing the best found format for the term, along with a score.
         /// </summary>
-        private readonly Dictionary<string, ListfileDictionaryEntry> DictionaryEntries =
+        private readonly Dictionary<string, ListfileDictionaryEntry> _dictionaryEntries =
             new Dictionary<string, ListfileDictionaryEntry>();
-
 
         /// <summary>
         /// Gets the entries which have a low score.
@@ -107,7 +105,7 @@ namespace liblistfile
         {
             get
             {
-                return this.DictionaryEntries.Where(pair => pair.Value.Score <= EntryLowScoreTolerance);
+                return _dictionaryEntries.Where(pair => pair.Value.Score <= EntryLowScoreTolerance);
             }
         }
 
@@ -119,31 +117,31 @@ namespace liblistfile
         {
             get
             {
-                return this.DictionaryEntries.Where(pair => pair.Value.Score >= EntryHighScoreTolerance);
+                return _dictionaryEntries.Where(pair => pair.Value.Score >= EntryHighScoreTolerance);
             }
         }
 
         /// <summary>
-        /// The dictionary words, extracted from the high-scoring entries.
+        /// Gets the dictionary words, extracted from the high-scoring entries.
         /// </summary>
-        public readonly List<string> DictionaryWords = new List<string>();
+        public List<string> DictionaryWords { get; } = new List<string>();
 
         private static readonly Regex WordsRegex = new Regex("([a-zA-Z]{4,})", RegexOptions.Compiled);
         private static readonly Regex AbbreviationRegex = new Regex("(?<=_|^)[A-Z]{2,3}(?=_)", RegexOptions.Compiled);
         private static readonly Regex TermToWordsRegex = new Regex("([A-Z][a-z]{1}[A-Z](?=\\W|$)|[A-Z][a-z]+)", RegexOptions.Compiled);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="liblistfile.ListfileDictionary"/> class.
+        /// Initializes a new instance of the <see cref="ListfileDictionary"/> class.
         /// This constructor creates a new, empty dictionary.
         /// </summary>
         public ListfileDictionary()
         {
-            this.EntryLowScoreTolerance = 0.0f;
-            this.EntryHighScoreTolerance = 3.0f;
+            EntryLowScoreTolerance = 0.0f;
+            EntryHighScoreTolerance = 3.0f;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="liblistfile.ListfileDictionary"/> class.
+        /// Initializes a new instance of the <see cref="ListfileDictionary"/> class.
         /// This constructor loads an existing dictionary from a byte array.
         /// </summary>
         /// <param name="data">Data.</param>
@@ -159,10 +157,10 @@ namespace liblistfile
         /// <summary>
         /// Asynchronously loads dictionary data from the given data stream.
         /// </summary>
-        /// <param name="dataStream"></param>
-        /// <param name="ct"></param>
-        /// <exception cref="InvalidDataException"></exception>
-        public async Task LoadFromStreamAsync(Stream dataStream, CancellationToken ct = new CancellationToken())
+        /// <param name="dataStream">The stream to load the dictionary from.</param>
+        /// <param name="ct">The cancellation token to use.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task LoadFromStreamAsync(Stream dataStream, CancellationToken ct = default)
         {
             await Task.Run(() => LoadFromStream(dataStream, ct), ct);
         }
@@ -170,10 +168,9 @@ namespace liblistfile
         /// <summary>
         /// Loads dictionary data from the given data stream.
         /// </summary>
-        /// <param name="dataStream"></param>
-        /// <param name="ct"></param>
-        /// <exception cref="InvalidDataException"></exception>
-        public void LoadFromStream(Stream dataStream, CancellationToken ct = new CancellationToken())
+        /// <param name="dataStream">The stream to load the dictionary from.</param>
+        /// <param name="ct">The cancellation token to use.</param>
+        public void LoadFromStream(Stream dataStream, CancellationToken ct = default)
         {
             using (var br = new BinaryReader(dataStream))
             {
@@ -182,6 +179,7 @@ namespace liblistfile
                 {
                     throw new InvalidDataException("The input data did not begin with a dictionary signature.");
                 }
+
                 var dataVersion = br.ReadUInt32();
 
                 if (dataVersion < Version)
@@ -195,7 +193,7 @@ namespace liblistfile
                             ct.ThrowIfCancellationRequested();
 
                             var entry = new ListfileDictionaryEntry(br.ReadNullTerminatedString(), br.ReadSingle());
-                            this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
+                            _dictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
                         }
                     }
 
@@ -203,7 +201,7 @@ namespace liblistfile
                     if (dataVersion == 0)
                     {
                         // From version 0 and up, the score calculation was altered. Recalculate all scores.
-                        foreach (var entry in this.DictionaryEntries)
+                        foreach (var entry in _dictionaryEntries)
                         {
                             ct.ThrowIfCancellationRequested();
 
@@ -235,7 +233,7 @@ namespace liblistfile
                                         ct.ThrowIfCancellationRequested();
 
                                         var entry = new ListfileDictionaryEntry(zr.ReadNullTerminatedString(), zr.ReadSingle());
-                                        this.DictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
+                                        _dictionaryEntries.Add(entry.Term.ToUpperInvariant(), entry);
                                     }
                                 }
                             }
@@ -244,14 +242,14 @@ namespace liblistfile
                 }
 
                 // Extract all good words from high-scoring terms
-                foreach (var highScoreEntryPair in this.HighScoreEntries)
+                foreach (var highScoreEntryPair in HighScoreEntries)
                 {
                     ct.ThrowIfCancellationRequested();
 
                     AddNewTermWords(highScoreEntryPair.Value.Term, false);
                 }
 
-                this.DictionaryWords.Sort((s, s1) => CompareWordsByLength(s.AsSpan(), s1.AsSpan()));
+                DictionaryWords.Sort((s, s1) => CompareWordsByLength(s.AsSpan(), s1.AsSpan()));
             }
         }
 
@@ -264,15 +262,15 @@ namespace liblistfile
         {
             foreach (var word in GetWordsFromTerm(Path.GetFileNameWithoutExtension(term)))
             {
-                if (!this.DictionaryWords.Contains(word))
+                if (!DictionaryWords.Contains(word))
                 {
-                    this.DictionaryWords.Add(word);
+                    DictionaryWords.Add(word);
                 }
             }
 
             if (bSortDictionary)
             {
-                this.DictionaryWords.Sort((s, s1) => CompareWordsByLength(s.AsSpan(), s1.AsSpan()));
+                DictionaryWords.Sort((s, s1) => CompareWordsByLength(s.AsSpan(), s1.AsSpan()));
             }
         }
 
@@ -280,6 +278,7 @@ namespace liblistfile
         /// Guess the correct format of the specified term based on the words in the dictionary.
         /// </summary>
         /// <param name="term">Term.</param>
+        /// <returns>The guessed term.</returns>
         public string Guess(string term)
         {
             if (string.IsNullOrEmpty(term))
@@ -296,7 +295,7 @@ namespace liblistfile
             foreach (Match match in matches)
             {
                 var transientMatch = match.Value;
-                foreach (var word in this.DictionaryWords)
+                foreach (var word in DictionaryWords)
                 {
                     transientMatch = transientMatch.FastReplaceCaseInsensitive(word.ToUpperInvariant(), word);
                 }
@@ -312,7 +311,7 @@ namespace liblistfile
                 var transientMatch = match.Value;
 
                 // We'll only look at words which have the same length as the abbreviation
-                foreach (var word in this.DictionaryWords.Where(str => str.Length == match.Value.Length))
+                foreach (var word in DictionaryWords.Where(str => str.Length == match.Value.Length))
                 {
                     transientMatch = transientMatch.FastReplaceCaseInsensitive(word.ToUpperInvariant(), word);
                 }
@@ -322,7 +321,6 @@ namespace liblistfile
 
             return transientTerm + extension.ToLowerInvariant();
         }
-
 
         /// <summary>
         /// Guesses the correct casing of the term using assisted scoring. First, the casing is guessed using
@@ -361,8 +359,8 @@ namespace liblistfile
         /// <summary>
         /// Optimizes the provided path using the loaded dictionary.
         /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
+        /// <param name="path">The path to optimize.</param>
+        /// <returns>The optimized path.</returns>
         public string OptimizePath(string path)
         {
             var sb = new StringBuilder();
@@ -434,19 +432,19 @@ namespace liblistfile
         /// <param name="cleanTerm">term.</param>
         public bool ContainsTerm(string cleanTerm)
         {
-            return this.DictionaryEntries.ContainsKey(cleanTerm.ToUpperInvariant());
+            return _dictionaryEntries.ContainsKey(cleanTerm.ToUpperInvariant());
         }
 
         /// <summary>
         /// Deletes the specified term from the dictionary.
         /// </summary>
-        /// <param name="term"></param>
+        /// <param name="term">The term to delete.</param>
         public void DeleteTerm(string term)
         {
             var termKey = term.ToUpperInvariant();
-            if (this.DictionaryEntries.ContainsKey(termKey))
+            if (_dictionaryEntries.ContainsKey(termKey))
             {
-                this.DictionaryEntries.Remove(termKey);
+                _dictionaryEntries.Remove(termKey);
             }
         }
 
@@ -462,9 +460,9 @@ namespace liblistfile
                 return null;
             }
 
-            if (this.DictionaryEntries.ContainsKey(Path.GetFileNameWithoutExtension(term).ToUpperInvariant()))
+            if (_dictionaryEntries.ContainsKey(Path.GetFileNameWithoutExtension(term).ToUpperInvariant()))
             {
-                return this.DictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
+                return _dictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
             }
             else
             {
@@ -476,6 +474,7 @@ namespace liblistfile
         /// Adds an entry for the provided term if it's not already in the dictionary.
         /// </summary>
         /// <param name="term">term.</param>
+        /// <returns>true if the term was added; otherwise, false.</returns>
         public bool AddTermEntry(string term)
         {
             if (term == null)
@@ -488,7 +487,7 @@ namespace liblistfile
             {
                 var newEntry = new ListfileDictionaryEntry(cleanTerm, TermScore.Calculate(cleanTerm.AsSpan()));
 
-                this.DictionaryEntries.Add(cleanTerm.ToUpperInvariant(), newEntry);
+                _dictionaryEntries.Add(cleanTerm.ToUpperInvariant(), newEntry);
                 return true;
             }
 
@@ -501,6 +500,7 @@ namespace liblistfile
         /// the one in the dictionary.
         /// </summary>
         /// <param name="term">term.</param>
+        /// <returns>true if the term was updated; otherwise, false.</returns>
         public bool UpdateTermEntry(string term)
         {
             if (term == null)
@@ -515,7 +515,7 @@ namespace liblistfile
             }
             else
             {
-                return this.DictionaryEntries[cleanTerm.ToUpperInvariant()].UpdateTerm(cleanTerm);
+                return _dictionaryEntries[cleanTerm.ToUpperInvariant()].UpdateTerm(cleanTerm);
             }
         }
 
@@ -524,6 +524,7 @@ namespace liblistfile
         /// </summary>
         /// <param name="term">term.</param>
         /// <param name="score">Score.</param>
+        /// <returns>true if the score was set; otherwise, false.</returns>
         public bool SetTermScore(string term, float score)
         {
             if (term == null)
@@ -537,14 +538,15 @@ namespace liblistfile
                 var success = AddTermEntry(cleanTerm);
                 if (success)
                 {
-                    this.DictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
+                    _dictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
                 }
+
                 return success;
             }
 
-            if (score != this.DictionaryEntries[cleanTerm.ToUpperInvariant()].Score)
+            if (score != _dictionaryEntries[cleanTerm.ToUpperInvariant()].Score)
             {
-                this.DictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
+                _dictionaryEntries[cleanTerm.ToUpperInvariant()].SetScore(score);
                 return true;
             }
 
@@ -604,9 +606,10 @@ namespace liblistfile
                     {
                         bw.Write(c);
                     }
+
                     bw.Write(Version);
 
-                    bw.Write((ulong)this.DictionaryEntries.Count);
+                    bw.Write((ulong)_dictionaryEntries.Count);
 
                     // Compress the dictionary entries
                     byte[] compressedEntries;
@@ -614,7 +617,7 @@ namespace liblistfile
                     {
                         using (var uncompressedWriter = new BinaryWriter(uncompressedDictionaryStream))
                         {
-                            foreach (var dictionaryEntryPair in this.DictionaryEntries)
+                            foreach (var dictionaryEntryPair in _dictionaryEntries)
                             {
                                 uncompressedWriter.Write(dictionaryEntryPair.Value.Serialize());
                             }
@@ -633,4 +636,3 @@ namespace liblistfile
         }
     }
 }
-

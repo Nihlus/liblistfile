@@ -1,10 +1,7 @@
 ﻿//
 //  ByteArrayComparer.cs
 //
-//  Author:
-//       Jarl Gullberg <jarl.gullberg@gmail.com>
-//
-//  Copyright (c) 2016 Jarl Gullberg
+//  Copyright (c) 2018 Jarl Gullberg
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -24,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace liblistfile
+namespace ListFile
 {
     /// <summary>
     /// Equality comparator for byte arrays used in the optimized lists.
@@ -37,6 +34,7 @@ namespace liblistfile
         /// </summary>
         /// <param name="left">Left.</param>
         /// <param name="right">Right.</param>
+        /// <returns>true if the arrays are equal; otherwise, false.</returns>
         public bool Equals(byte[] left, byte[] right)
         {
             if (left == null || right == null)
@@ -59,7 +57,6 @@ namespace liblistfile
             if (key == null)
             {
                 throw new ArgumentNullException(nameof(key), "The byte may noy be null.");
-
             }
 
             return key.Sum(b => b);

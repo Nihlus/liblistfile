@@ -1,10 +1,7 @@
 ﻿//
-//  WordScore.cs
+//  TermScore.cs
 //
-//  Author:
-//       Jarl Gullberg <jarl.gullberg@gmail.com>
-//
-//  Copyright (c) 2016 Jarl Gullberg
+//  Copyright (c) 2018 Jarl Gullberg
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,7 +19,7 @@
 
 using System;
 
-namespace liblistfile.Score
+namespace ListFile.Score
 {
     /// <summary>
     /// PascalCase term score calculator.
@@ -45,6 +42,7 @@ namespace liblistfile.Score
         /// </summary>
         /// <param name="word">Word.</param>
         /// <param name="strict">Whether or not the score should be strict in its calculation.</param>
+        /// <returns>The score of the word.</returns>
         public static float Calculate(ReadOnlySpan<char> word, bool strict = false)
         {
             var score = 0.0f;
@@ -87,6 +85,7 @@ namespace liblistfile.Score
         /// Guesses the casing for the specified word.
         /// </summary>
         /// <param name="word">Word.</param>
+        /// <returns>The guessed casing.</returns>
         public static ReadOnlySpan<char> Guess(ReadOnlySpan<char> word)
         {
             Span<char> transientWord;
@@ -172,7 +171,6 @@ namespace liblistfile.Score
                     }
                 }
 
-
                 if (i + 1 < transientWord.Length && char.IsDigit(previousChar))
                 {
                     var nextChar = transientWord[i + 1];
@@ -210,6 +208,7 @@ namespace liblistfile.Score
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -227,6 +226,7 @@ namespace liblistfile.Score
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -316,4 +316,3 @@ namespace liblistfile.Score
         }
     }
 }
-

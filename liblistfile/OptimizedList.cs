@@ -1,10 +1,7 @@
 ﻿//
 //  OptimizedList.cs
 //
-//  Author:
-//       Jarl Gullberg <jarl.gullberg@gmail.com>
-//
-//  Copyright (c) 2016 Jarl Gullberg
+//  Copyright (c) 2018 Jarl Gullberg
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -28,7 +25,7 @@ using SharpCompress.Compressors.BZip2;
 using Warcraft.Core.Extensions;
 using Warcraft.Core.Interfaces;
 
-namespace liblistfile
+namespace ListFile
 {
     /// <summary>
     /// An optimized list of file paths.
@@ -50,36 +47,36 @@ namespace liblistfile
         public const string Signature = "LIST";
 
         /// <summary>
-        /// A 128-bit MD5 hash of the archive this list is made for.
+        /// Gets a 128-bit MD5 hash of the archive this list is made for.
         /// </summary>
-        public byte[] PackageHash = new byte[16];
+        public byte[] PackageHash { get; private set; } = new byte[16];
 
         /// <summary>
-        /// A 128-bit MD5 hash of the compressed list data.
+        /// Gets a 128-bit MD5 hash of the compressed list data.
         /// </summary>
-        public byte[] ListHash = new byte[16];
+        public byte[] ListHash { get; private set; } = new byte[16];
 
         /// <summary>
-        /// The optimized paths contained in this list.
+        /// Gets the optimized paths contained in this list.
         /// </summary>
-        public readonly List<string> OptimizedPaths = new List<string>();
+        public List<string> OptimizedPaths { get; } = new List<string>();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="liblistfile.OptimizedList"/> class.
+        /// Initializes a new instance of the <see cref="OptimizedList"/> class.
         /// This constructor creates a new, empty OptimizedList.
         /// </summary>
         /// <param name="inPackageHash">In archive signature.</param>
         /// <param name="inOptimizedPaths">In optimized paths.</param>
         public OptimizedList(byte[] inPackageHash, List<string> inOptimizedPaths)
         {
-            this.PackageHash = inPackageHash;
-            this.OptimizedPaths = inOptimizedPaths;
+            PackageHash = inPackageHash;
+            OptimizedPaths = inOptimizedPaths;
 
-            this.ListHash = this.OptimizedPaths.Compress().ComputeHash();
+            ListHash = OptimizedPaths.Compress().ComputeHash();
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="liblistfile.OptimizedList"/> class.
+        /// Initializes a new instance of the <see cref="OptimizedList"/> class.
         /// This constructor loads an existing OptimizedList from a byte array.
         /// </summary>
         /// <param name="inData">Data.</param>
@@ -87,7 +84,6 @@ namespace liblistfile
         {
             LoadBinaryData(inData);
         }
-
 
         /// <summary>
         /// Deserialzes the provided binary data of the object. This is the full data block which follows the data
@@ -101,10 +97,10 @@ namespace liblistfile
                 using (var br = new BinaryReader(ms))
                 {
                     // Read the MD5 archive signature.
-                    this.PackageHash = br.ReadBytes(this.PackageHash.Length);
-                    this.ListHash = br.ReadBytes(this.ListHash.Length);
+                    PackageHash = br.ReadBytes(PackageHash.Length);
+                    ListHash = br.ReadBytes(ListHash.Length);
 
-                    var hashesSize = (this.PackageHash.LongLength + this.ListHash.LongLength);
+                    var hashesSize = PackageHash.LongLength + ListHash.LongLength;
                     var compressedDataSize = (int)(inData.LongLength - hashesSize);
                     using (var compressedData = new MemoryStream(br.ReadBytes(compressedDataSize)))
                     {
@@ -121,7 +117,7 @@ namespace liblistfile
                                 {
                                     while (decompressedData.Position < decompressedData.Length)
                                     {
-                                        this.OptimizedPaths.Add(listReader.ReadNullTerminatedString());
+                                        OptimizedPaths.Add(listReader.ReadNullTerminatedString());
                                     }
                                 }
                             }
@@ -155,12 +151,13 @@ namespace liblistfile
                         bw.Write(c);
                     }
 
-                    var compressedList = this.OptimizedPaths.Compress();
+                    var compressedList = OptimizedPaths.Compress();
 
-                    var blockSize = (ulong)this.PackageHash.LongLength + (ulong)this.ListHash.LongLength + (ulong)compressedList.LongLength;
+                    var blockSize = (ulong)PackageHash.LongLength + (ulong)ListHash.LongLength + (ulong)compressedList.LongLength;
                     bw.Write(blockSize);
 
-                    bw.Write(this.PackageHash);
+                    bw.Write(PackageHash);
+
                     // Calculate and write the hash of the compressed data
                     bw.Write(compressedList.ComputeHash());
 
@@ -171,14 +168,12 @@ namespace liblistfile
             }
         }
 
-        #region IEquatable implementation
-
         /// <summary>
-        /// Determines whether the specified <see cref="System.Object"/> is equal to the current <see cref="liblistfile.OptimizedList"/>.
+        /// Determines whether the specified <see cref="object"/> is equal to the current <see cref="OptimizedList"/>.
         /// </summary>
-        /// <param name="obj">The <see cref="System.Object"/> to compare with the current <see cref="liblistfile.OptimizedList"/>.</param>
-        /// <returns><c>true</c> if the specified <see cref="System.Object"/> is equal to the current
-        /// <see cref="liblistfile.OptimizedList"/>; otherwise, <c>false</c>.</returns>
+        /// <param name="obj">The <see cref="object"/> to compare with the current <see cref="OptimizedList"/>.</param>
+        /// <returns><c>true</c> if the specified <see cref="object"/> is equal to the current
+        /// <see cref="OptimizedList"/>; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
         {
             var other = obj as OptimizedList;
@@ -193,11 +188,11 @@ namespace liblistfile
         }
 
         /// <summary>
-        /// Determines whether the specified <see cref="liblistfile.OptimizedList"/> is equal to the current <see cref="liblistfile.OptimizedList"/>.
+        /// Determines whether the specified <see cref="OptimizedList"/> is equal to the current <see cref="OptimizedList"/>.
         /// </summary>
-        /// <param name="other">The <see cref="liblistfile.OptimizedList"/> to compare with the current <see cref="liblistfile.OptimizedList"/>.</param>
-        /// <returns><c>true</c> if the specified <see cref="liblistfile.OptimizedList"/> is equal to the current
-        /// <see cref="liblistfile.OptimizedList"/>; otherwise, <c>false</c>.</returns>
+        /// <param name="other">The <see cref="OptimizedList"/> to compare with the current <see cref="OptimizedList"/>.</param>
+        /// <returns><c>true</c> if the specified <see cref="OptimizedList"/> is equal to the current
+        /// <see cref="OptimizedList"/>; otherwise, <c>false</c>.</returns>
         public bool Equals(OptimizedList other)
         {
             if (other == null)
@@ -205,19 +200,17 @@ namespace liblistfile
                 return false;
             }
 
-            return this.PackageHash.Equals(other.PackageHash) &&
-                   new HashSet<string>(this.OptimizedPaths).SetEquals(new HashSet<string>(other.OptimizedPaths));
+            return PackageHash.Equals(other.PackageHash) &&
+                   new HashSet<string>(OptimizedPaths).SetEquals(new HashSet<string>(other.OptimizedPaths));
         }
 
         /// <summary>
-        /// Serves as a hash function for a <see cref="liblistfile.OptimizedList"/> object.
+        /// Serves as a hash function for a <see cref="OptimizedList"/> object.
         /// </summary>
         /// <returns>A hash code for this instance that is suitable for use in hashing algorithms and data structures such as a hash table.</returns>
         public override int GetHashCode()
         {
-            return (this.PackageHash.GetHashCode() + this.OptimizedPaths.GetHashCode()).GetHashCode();
+            return (PackageHash.GetHashCode() + OptimizedPaths.GetHashCode()).GetHashCode();
         }
-
-        #endregion
     }
 }
