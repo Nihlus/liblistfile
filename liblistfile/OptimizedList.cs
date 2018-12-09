@@ -98,6 +98,7 @@ namespace ListFile
         /// signature and data block length.
         /// </summary>
         /// <param name="inData">The binary data containing the object.</param>
+        [PublicAPI]
         public void LoadBinaryData([NotNull] byte[] inData)
         {
             using (var ms = new MemoryStream(inData))
@@ -139,7 +140,7 @@ namespace ListFile
         /// Gets the static data signature of this data block type.
         /// </summary>
         /// <returns>A string representing the block signature.</returns>
-        [NotNull]
+        [NotNull, Pure]
         public string GetSignature()
         {
             return Signature;
@@ -149,7 +150,7 @@ namespace ListFile
         /// Serializes the object into a byte array.
         /// </summary>
         /// <returns>The bytes.</returns>
-        [NotNull]
+        [NotNull, Pure]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream())

@@ -15,6 +15,7 @@
           <e p="dictionary.dic" t="Include" />
         </e>
         <e p="ExtensionMethods.cs" t="Include" />
+        <e p="FodyWeavers.xml" t="Include" />
         <e p="ListfileDictionary.cs" t="Include" />
         <e p="ListfileDictionaryEntry.cs" t="Include" />
         <e p="OptimizedList.cs" t="Include" />

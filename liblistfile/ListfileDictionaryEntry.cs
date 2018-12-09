@@ -126,7 +126,7 @@ namespace ListFile
         /// Serializes the object into a byte array.
         /// </summary>
         /// <returns>The bytes.</returns>
-        [PublicAPI, NotNull]
+        [PublicAPI, NotNull, Pure]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream(Term.Length + 1 + 4))

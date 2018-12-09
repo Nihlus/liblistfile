@@ -137,7 +137,7 @@ namespace ListFile
         /// </summary>
         /// <returns><c>true</c>, if the hash has any lists, <c>false</c> otherwise.</returns>
         /// <param name="packageHash">Package hash.</param>
-        [PublicAPI]
+        [PublicAPI, Pure]
         public bool ContainsPackageListfile([NotNull] byte[] packageHash)
         {
             return OptimizedLists.ContainsKey(packageHash);
@@ -148,7 +148,7 @@ namespace ListFile
         /// </summary>
         /// <returns><c>true</c> if the specifed list is the same as the one which is stored in the container; otherwise, <c>false</c>.</returns>
         /// <param name="inOptimizedList">Optimized list.</param>
-        [PublicAPI]
+        [PublicAPI, Pure]
         public bool IsListSameAsStored([NotNull] OptimizedList inOptimizedList)
         {
             if (ContainsPackageListfile(inOptimizedList.PackageHash))
@@ -191,7 +191,7 @@ namespace ListFile
         /// Serializes the object into a byte array.
         /// </summary>
         /// <returns>The bytes.</returns>
-        [PublicAPI, NotNull]
+        [PublicAPI, NotNull, Pure]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream())

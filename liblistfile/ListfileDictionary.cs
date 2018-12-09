@@ -269,7 +269,7 @@ namespace ListFile
         /// </summary>
         /// <param name="term">Term.</param>
         /// <returns>The guessed term.</returns>
-        [PublicAPI, NotNull]
+        [PublicAPI, NotNull, Pure]
         public string Guess([NotNull] string term)
         {
             if (string.IsNullOrEmpty(term))
@@ -354,7 +354,7 @@ namespace ListFile
         /// </summary>
         /// <param name="path">The path to optimize.</param>
         /// <returns>The optimized path.</returns>
-        [PublicAPI, NotNull]
+        [PublicAPI, NotNull, Pure]
         public string OptimizePath([NotNull] string path)
         {
             var sb = new StringBuilder();
@@ -372,10 +372,12 @@ namespace ListFile
 
                 if (!ContainsTerm(potentialTerm))
                 {
-                    UpdateTermEntry(potentialTerm);
+                    sb.Append(potentialTerm);
                 }
-
-                sb.Append(GetTermEntry(potentialTerm).Term);
+                else
+                {
+                    sb.Append(GetTermEntry(potentialTerm).Term);
+                }
 
                 if (!string.IsNullOrEmpty(extension))
                 {
@@ -396,7 +398,7 @@ namespace ListFile
         /// </summary>
         /// <returns>The words from term.</returns>
         /// <param name="term">Term.</param>
-        [PublicAPI, NotNull, ItemNotNull]
+        [PublicAPI, NotNull, ItemNotNull, Pure]
         public static IEnumerable<string> GetWordsFromTerm([NotNull] string term)
         {
             var words = new List<string>();
@@ -450,7 +452,7 @@ namespace ListFile
         /// </summary>
         /// <returns>The term entry.</returns>
         /// <param name="term">term.</param>
-        [PublicAPI, CanBeNull]
+        [PublicAPI, NotNull, Pure]
         public ListfileDictionaryEntry GetTermEntry([NotNull] string term)
         {
             if (_dictionaryEntries.ContainsKey(Path.GetFileNameWithoutExtension(term).ToUpperInvariant()))
@@ -458,7 +460,7 @@ namespace ListFile
                 return _dictionaryEntries[Path.GetFileNameWithoutExtension(term).ToUpperInvariant()];
             }
 
-            return null;
+            throw new KeyNotFoundException("The dictionary contains no entry for that term.");
         }
 
         /// <summary>
@@ -537,6 +539,7 @@ namespace ListFile
         /// <returns>The words by length.</returns>
         /// <param name="x">The x coordinate.</param>
         /// <param name="y">The y coordinate.</param>
+        [Pure]
         private static int CompareWordsByLength(ReadOnlySpan<char> x, ReadOnlySpan<char> y)
         {
             if (x == null)
@@ -573,7 +576,7 @@ namespace ListFile
         }
 
         /// <inheritdoc />
-        [NotNull]
+        [NotNull, Pure]
         public byte[] Serialize()
         {
             using (var ms = new MemoryStream())
