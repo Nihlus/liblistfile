@@ -1,0 +1,397 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<assembly name="liblistfile">
+  <member name="T:ListFile.ExtensionMethods">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ExtensionMethods.Compress(System.Byte[])">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="uncompressedBytes">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ExtensionMethods.Compress(System.Collections.Generic.List{System.String})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="inputList">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+      <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ExtensionMethods.ComputeHash(System.Byte[])">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="byteArray">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ExtensionMethods.FastReplaceCaseInsensitive(System.String,System.String,System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="original">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+    <parameter name="pattern">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+    <parameter name="replacement">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ExtensionMethods.GetSerializedSize(System.Collections.Generic.IEnumerable{System.String})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="stringList">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+      <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ExtensionMethods.Serialize(System.Collections.Generic.List{System.String})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="stringList">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+      <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="T:ListFile.ListfileDictionary">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionary.#ctor">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionary.#ctor(System.Byte[])">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="data">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.AddNewTermWords(System.String,System.Boolean)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.AddTermEntry(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.ContainsTerm(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="cleanTerm">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.DeleteTerm(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="P:ListFile.ListfileDictionary.DictionaryWords">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+  </member>
+  <member name="P:ListFile.ListfileDictionary.EntryHighScoreTolerance">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="P:ListFile.ListfileDictionary.EntryLowScoreTolerance">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="F:ListFile.ListfileDictionary.Extension">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionary.GetTermEntry(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.GetWordsFromTerm(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.Guess(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.GuessScored(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="P:ListFile.ListfileDictionary.HighScoreEntries">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionary.LoadFromStream(System.IO.Stream,System.Threading.CancellationToken)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="dataStream">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.LoadFromStreamAsync(System.IO.Stream,System.Threading.CancellationToken)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <parameter name="dataStream">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="P:ListFile.ListfileDictionary.LowScoreEntries">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionary.OptimizeList(System.Collections.Generic.IEnumerable{System.String})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+    <parameter name="unoptimizedList">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+      <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.OptimizePath(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="path">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionary.Serialize">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionary.SetTermScore(System.String,System.Single)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="F:ListFile.ListfileDictionary.Signature">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionary.UpdateTermEntry(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="F:ListFile.ListfileDictionary.Version">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="T:ListFile.ListfileDictionaryEntry">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionaryEntry.#ctor(System.String,System.Single)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="inTerm">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.ListfileDictionaryEntry.RecalculateScore">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="P:ListFile.ListfileDictionaryEntry.Score">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionaryEntry.Serialize">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionaryEntry.SetScore(System.Single)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionaryEntry.SetTerm(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="P:ListFile.ListfileDictionaryEntry.Term">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.ListfileDictionaryEntry.UpdateTerm(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="term">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="T:ListFile.OptimizedList">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.OptimizedList.#ctor(System.Byte[],System.Collections.Generic.List{System.String})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="inPackageHash">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+    <parameter name="inOptimizedPaths">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+      <attribute ctor="M:JetBrains.Annotations.ItemNotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.OptimizedList.#ctor(System.Byte[])">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="inData">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.OptimizedList.GetSignature">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="P:ListFile.OptimizedList.ListHash">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.OptimizedList.LoadBinaryData(System.Byte[])">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="inData">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="P:ListFile.OptimizedList.OptimizedPaths">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="P:ListFile.OptimizedList.PackageHash">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.OptimizedList.Serialize">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="F:ListFile.OptimizedList.Signature">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="T:ListFile.OptimizedListContainer">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.OptimizedListContainer.#ctor(System.Byte[])">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="data">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.OptimizedListContainer.#ctor(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="inArchiveName">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.OptimizedListContainer.AddOptimizedList(ListFile.OptimizedList)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="inOptimizedList">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.OptimizedListContainer.ContainsPackageListfile(System.Byte[])">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="packageHash">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="F:ListFile.OptimizedListContainer.Extension">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.OptimizedListContainer.IsListSameAsStored(ListFile.OptimizedList)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+    <parameter name="inOptimizedList">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="P:ListFile.OptimizedListContainer.OptimizedLists">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="P:ListFile.OptimizedListContainer.PackageName">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.OptimizedListContainer.ReplaceOptimizedList(ListFile.OptimizedList)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <parameter name="inOptimizedList">
+      <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    </parameter>
+  </member>
+  <member name="M:ListFile.OptimizedListContainer.Serialize">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="F:ListFile.OptimizedListContainer.Signature">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="F:ListFile.OptimizedListContainer.Version">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="T:ListFile.Score.TermScore">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.Calculate(System.ReadOnlySpan{System.Char},System.Boolean)">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.GetFilename(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.Guess(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.HasMoreThanOneVersal(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.IsAllLower(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.IsAllUpper(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.IsFilename(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.IsMixedCase(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+  <member name="M:ListFile.Score.TermScore.StartsWithSingleUpper(System.ReadOnlySpan{System.Char})">
+    <attribute ctor="M:JetBrains.Annotations.PublicAPIAttribute.#ctor" />
+    <attribute ctor="M:JetBrains.Annotations.PureAttribute.#ctor" />
+  </member>
+</assembly>
