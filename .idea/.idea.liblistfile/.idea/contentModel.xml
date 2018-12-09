@@ -18,6 +18,9 @@
           <e p="UnsupportedNodeTreeVersionException.cs" t="Include" />
         </e>
         <e p="ExtensionMethods.cs" t="Include" />
+        <e p="Extensions" t="Include">
+          <e p="CharSpanExtensions.cs" t="Include" />
+        </e>
         <e p="ListfileDictionary.cs" t="Include" />
         <e p="ListfileDictionaryEntry.cs" t="Include" />
         <e p="NodeTree" t="Include">
@@ -46,15 +49,8 @@
       </e>
       <e p="liblistfile.Benchmark" t="IncludeRecursive">
         <e p="Benchmark.cs" t="Include" />
-        <e p="BenchmarkDotNet.Artifacts" t="Include">
-          <e p="liblistfile.Benchmark.Benchmark.log" t="Include" />
-          <e p="results" t="Include">
-            <e p="liblistfile.Benchmark.Benchmark-report-github.md" t="Include" />
-            <e p="liblistfile.Benchmark.Benchmark-report.csv" t="Include" />
-            <e p="liblistfile.Benchmark.Benchmark-report.html" t="Include" />
-          </e>
-        </e>
         <e p="Data" t="Include">
+          <e p="big-sample-data.txt" t="Include" />
           <e p="sample-data.txt" t="Include" />
         </e>
         <e p="Program.cs" t="Include" />

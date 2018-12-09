@@ -251,7 +251,7 @@ namespace liblistfile
 					AddNewTermWords(highScoreEntryPair.Value.Term, false);
 				}
 
-				this.DictionaryWords.Sort(CompareWordsByLength);
+				this.DictionaryWords.Sort((s, s1) => CompareWordsByLength(s.AsSpan(), s1.AsSpan()));
 			}
 		}
 
@@ -272,7 +272,7 @@ namespace liblistfile
 
 			if (bSortDictionary)
 			{
-				this.DictionaryWords.Sort(CompareWordsByLength);
+				this.DictionaryWords.Sort((s, s1) => CompareWordsByLength(s.AsSpan(), s1.AsSpan()));
 			}
 		}
 
@@ -334,8 +334,8 @@ namespace liblistfile
 		public string GuessScored(string term)
 		{
 			var transientTerm = Guess(term);
-			var scoredTransientTerm = TermScore.Guess(transientTerm);
-			var correctedScoredTransientTerm = Guess(scoredTransientTerm);
+			var scoredTransientTerm = TermScore.Guess(transientTerm.AsSpan());
+			var correctedScoredTransientTerm = Guess(scoredTransientTerm.ToString());
 
 			return correctedScoredTransientTerm;
 		}
@@ -486,7 +486,7 @@ namespace liblistfile
 			var cleanTerm = Path.GetFileNameWithoutExtension(term);
 			if (!ContainsTerm(cleanTerm))
 			{
-				var newEntry = new ListfileDictionaryEntry(cleanTerm, TermScore.Calculate(cleanTerm));
+				var newEntry = new ListfileDictionaryEntry(cleanTerm, TermScore.Calculate(cleanTerm.AsSpan()));
 
 				this.DictionaryEntries.Add(cleanTerm.ToUpperInvariant(), newEntry);
 				return true;
@@ -558,7 +558,7 @@ namespace liblistfile
 		/// <returns>The words by length.</returns>
 		/// <param name="x">The x coordinate.</param>
 		/// <param name="y">The y coordinate.</param>
-		private static int CompareWordsByLength(string x, string y)
+		private static int CompareWordsByLength(ReadOnlySpan<char> x, ReadOnlySpan<char> y)
 		{
 			if (x == null)
 			{
@@ -590,7 +590,7 @@ namespace liblistfile
 			}
 
 			// If the strings are of equal length, sort them with ordinary string comparison.
-			return string.Compare(x, y, StringComparison.Ordinal);
+			return x.CompareTo(y, StringComparison.Ordinal);
 		}
 
 		/// <inheritdoc />

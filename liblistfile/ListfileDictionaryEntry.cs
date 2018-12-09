@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+using System;
 using System.IO;
 using liblistfile.Score;
 using Warcraft.Core.Extensions;
@@ -75,7 +76,7 @@ namespace liblistfile
 		/// <param name="term">Term.</param>
 		public bool UpdateTerm(string term)
 		{
-			var newTermScore = TermScore.Calculate(term);
+			var newTermScore = TermScore.Calculate(term.AsSpan());
 			if (this.Score < newTermScore)
 			{
 				this.Term = term;
@@ -83,10 +84,8 @@ namespace liblistfile
 
 				return true;
 			}
-			else
-			{
-				return false;
-			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -112,7 +111,7 @@ namespace liblistfile
 		/// </summary>
 		public void RecalculateScore()
 		{
-			this.Score = TermScore.Calculate(this.Term);
+			this.Score = TermScore.Calculate(this.Term.AsSpan());
 		}
 
 		/// <summary>

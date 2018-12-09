@@ -4,11 +4,12 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <Title>liblistfile</Title>
     <Authors>Jarl Gullberg</Authors>
-    <Version>2.1.0</Version>
+    <Version>3.0.0-2</Version>
     <Description>Managed library for generating and optimizing lists and node trees created from lists of file paths..</Description>
     <Copyright>Copyright Jarl Gullberg 2017</Copyright>
   </PropertyGroup>

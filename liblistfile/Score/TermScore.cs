@@ -19,7 +19,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-using System.Text;
+
+using System;
 
 namespace liblistfile.Score
 {
@@ -31,7 +32,7 @@ namespace liblistfile.Score
 	/// In general, the more mixed a word is, the better the score. All-caps words get the lowest score (a 0),
 	/// and those with mixed case that begin with a single upper-case letter get the best scores.
 	///
-	/// Overall, the score is merely an indication and doesn't reliably detect propre PascalCase,
+	/// Overall, the score is merely an indication and doesn't reliably detect proper PascalCase,
 	/// since it doesn't know anything about actual words. However, it's good enough for most purposes.
 	/// </summary>
 	public static class TermScore
@@ -44,7 +45,7 @@ namespace liblistfile.Score
 		/// </summary>
 		/// <param name="word">Word.</param>
 		/// <param name="strict">Whether or not the score should be strict in its calculation.</param>
-		public static float Calculate(string word, bool strict = false)
+		public static float Calculate(ReadOnlySpan<char> word, bool strict = false)
 		{
 			var score = 0.0f;
 
@@ -86,17 +87,21 @@ namespace liblistfile.Score
 		/// Guesses the casing for the specified word.
 		/// </summary>
 		/// <param name="word">Word.</param>
-		public static string Guess(string word)
+		public static ReadOnlySpan<char> Guess(ReadOnlySpan<char> word)
 		{
-			var transientWord = word;
+			Span<char> transientWord;
+			unsafe
+			{
+				char* storage = stackalloc char[word.Length];
+				transientWord = new Span<char>(storage, word.Length);
+			}
 
-			transientWord = transientWord.ToLowerInvariant();
+			word.CopyTo(transientWord);
+
+			word.ToLowerInvariant(transientWord);
 
 			// Set the first character to be uppercase
-			var wordBuilder = new StringBuilder(transientWord)
-			{
-				[0] = char.ToUpper(transientWord[0])
-			};
+			transientWord[0] = char.ToUpper(transientWord[0]);
 
 			var previousChar = (char)0;
 			for (var i = 0; i < transientWord.Length; ++i)
@@ -108,7 +113,7 @@ namespace liblistfile.Score
 				{
 					if (char.IsLetter(currentChar))
 					{
-						wordBuilder[i] = char.ToUpper(currentChar);
+						transientWord[i] = char.ToUpper(currentChar);
 					}
 
 					if (i < transientWord.Length - 2)
@@ -117,7 +122,7 @@ namespace liblistfile.Score
 						{
 							if (char.IsLetter(transientWord[i + 1]))
 							{
-								wordBuilder[i + 1] = char.ToUpper(transientWord[i + 1]);
+								transientWord[i + 1] = char.ToUpper(transientWord[i + 1]);
 							}
 						}
 					}
@@ -126,7 +131,7 @@ namespace liblistfile.Score
 				// Any char following a digit is upper
 				if (char.IsDigit(currentChar) && (i + 1) < transientWord.Length)
 				{
-					wordBuilder[i + 1] = char.ToUpper(transientWord[i + 1]);
+					transientWord[i + 1] = char.ToUpper(transientWord[i + 1]);
 				}
 
 				// Any set of three chars or less between a string boundary or a _ is upper
@@ -152,7 +157,7 @@ namespace liblistfile.Score
 								break;
 							}
 
-							wordBuilder[i - j] = char.ToUpper(transientWord[i - j]);
+							transientWord[i - j] = char.ToUpper(transientWord[i - j]);
 							++j;
 						}
 					}
@@ -163,7 +168,7 @@ namespace liblistfile.Score
 				{
 					if (char.IsLetter(currentChar))
 					{
-						wordBuilder[i] = char.ToUpper(currentChar);
+						transientWord[i] = char.ToUpper(currentChar);
 					}
 				}
 
@@ -173,22 +178,22 @@ namespace liblistfile.Score
 					var nextChar = transientWord[i + 1];
 					if (char.IsDigit(nextChar))
 					{
-						wordBuilder[i] = char.ToLower(currentChar);
+						transientWord[i] = char.ToLower(currentChar);
 					}
 				}
 
 				if (currentChar == '.')
 				{
-					// Set the rest of the string to be lowercase
-					var extension = transientWord.Substring(i).ToLower();
-					transientWord = transientWord.Remove(i);
-					transientWord += extension;
+					for (int loweringPosition = i; i < transientWord.Length - i; ++i)
+					{
+						transientWord[loweringPosition] = char.ToLower(transientWord[loweringPosition]);
+					}
 				}
 
 				previousChar = currentChar;
 			}
 
-			return wordBuilder.ToString();
+			return transientWord;
 		}
 
 		/// <summary>
@@ -196,7 +201,7 @@ namespace liblistfile.Score
 		/// </summary>
 		/// <returns><c>true</c> if the specified string is all upper-case; otherwise, <c>false</c>.</returns>
 		/// <param name="str">String.</param>
-		public static bool IsAllUpper(this string str)
+		public static bool IsAllUpper(this ReadOnlySpan<char> str)
 		{
 			foreach (var c in str)
 			{
@@ -213,7 +218,7 @@ namespace liblistfile.Score
 		/// </summary>
 		/// <returns><c>true</c> if the specified string is all lower-case; otherwise, <c>false</c>.</returns>
 		/// <param name="str">String.</param>
-		public static bool IsAllLower(this string str)
+		public static bool IsAllLower(this ReadOnlySpan<char> str)
 		{
 			foreach (var c in str)
 			{
@@ -230,27 +235,30 @@ namespace liblistfile.Score
 		/// </summary>
 		/// <returns><c>true</c> if is file the specified str; otherwise, <c>false</c>.</returns>
 		/// <param name="str">String.</param>
-		public static bool IsFilename(this string str)
+		public static bool IsFilename(this ReadOnlySpan<char> str)
 		{
-			return str.Contains(".");
+			return str.Contains(".".AsSpan(), StringComparison.Ordinal);
 		}
 
 		/// <summary>
-		/// Determines if the specifed string (as a filename) is all uppercase. This ignores the extension.
+		/// Determines if the specified string (as a filename) is all uppercase. This ignores the extension.
 		/// </summary>
 		/// <returns><c>true</c> if is filename all upper the specified str; otherwise, <c>false</c>.</returns>
 		/// <param name="str">String.</param>
-		public static string GetFilename(this string str)
+		public static ReadOnlySpan<char> GetFilename(this ReadOnlySpan<char> str)
 		{
 			if (str.IsFilename())
 			{
-				var parts = str.Split('.');
-				return parts[0];
+				int dotIndex = 0;
+				while (str[dotIndex] != '.')
+				{
+					++dotIndex;
+				}
+
+				return str.Slice(0, dotIndex);
 			}
-			else
-			{
-				return str;
-			}
+
+			return str;
 		}
 
 		/// <summary>
@@ -258,7 +266,7 @@ namespace liblistfile.Score
 		/// </summary>
 		/// <returns><c>true</c> if the specified string is mixed-case; otherwise, <c>false</c>.</returns>
 		/// <param name="str">String.</param>
-		public static bool IsMixedCase(this string str)
+		public static bool IsMixedCase(this ReadOnlySpan<char> str)
 		{
 			return !str.IsAllLower() && !str.IsAllUpper();
 		}
@@ -268,7 +276,7 @@ namespace liblistfile.Score
 		/// </summary>
 		/// <returns><c>true</c> if the specified string has more than one upper-case letter; otherwise, <c>false</c>.</returns>
 		/// <param name="str">String.</param>
-		public static bool HasMoreThanOneVersal(this string str)
+		public static bool HasMoreThanOneVersal(this ReadOnlySpan<char> str)
 		{
 			var versalCount = 0;
 			foreach (var c in str)
@@ -283,6 +291,7 @@ namespace liblistfile.Score
 					return true;
 				}
 			}
+
 			return false;
 		}
 
@@ -291,7 +300,7 @@ namespace liblistfile.Score
 		/// </summary>
 		/// <returns><c>true</c> if the specified string starts with a single upper-case letter; otherwise, <c>false</c>.</returns>
 		/// <param name="str">String.</param>
-		public static bool StartsWithSingleUpper(this string str)
+		public static bool StartsWithSingleUpper(this ReadOnlySpan<char> str)
 		{
 			if (str.Length > 0)
 			{
@@ -299,11 +308,10 @@ namespace liblistfile.Score
 				{
 					return char.IsUpper(str[0]) && !char.IsUpper(str[1]);
 				}
-				else
-				{
-					return char.IsUpper(str[0]);
-				}
+
+				return char.IsUpper(str[0]);
 			}
+
 			return false;
 		}
 	}
