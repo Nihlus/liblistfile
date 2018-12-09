@@ -24,6 +24,7 @@
           <e p="TermScore.cs" t="Include" />
         </e>
         <e p="bin" t="ExcludeRecursive" />
+        <e p="liblistfile.ExternalAnnotations.xml" t="Include" />
         <e p="liblistfile.csproj" t="IncludeRecursive" />
         <e p="obj" t="ExcludeRecursive">
           <e p="Release" t="Include">
@@ -37,6 +38,7 @@
       <e p="packages" t="ExcludeRecursive" />
       <e p="props" t="Include">
         <e p="common.props" t="Include" />
+        <e p="jetbrains.props" t="Include" />
         <e p="netfx-mono.props" t="Include" />
         <e p="nuget-common.props" t="Include" />
         <e p="stylecop.props" t="Include" />

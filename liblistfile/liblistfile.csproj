@@ -9,7 +9,7 @@
     <RootNamespace>ListFile</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
-    <Version>3.0.0-rc6</Version>
+    <Version>3.0.0-rc7</Version>
     <PackageReleaseNotes>Move tree generation code to a new library.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
@@ -18,18 +18,12 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <AdditionalFiles Include="FodyWeavers.xml">
-      <InProject>false</InProject>
-    </AdditionalFiles>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" PrivateAssets="all" />
-    <PackageReference Include="JetBrainsAnnotations.Fody" Version="2.10.0" PrivateAssets="all" />
     <PackageReference Include="libwarcraft" Version="2.7.0" />
-    <PackageReference Include="SharpCompress" Version="0.18.0" />
+    <PackageReference Include="SharpCompress" Version="0.22.0" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
   <Import Project="..\props\common.props" />
+  <Import Project="$(SolutionRoot)\props\jetbrains.props" />
   <Import Project="$(SolutionRoot)\props\nuget-common.props" />
   <Import Project="$(SolutionRoot)\props\netfx-mono.props" />
   <Import Project="$(SolutionRoot)\props\stylecop.props" />
