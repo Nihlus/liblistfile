@@ -43,11 +43,10 @@ namespace liblistfile
 		/// <summary>
 		/// The current version of the node tree format.
 		/// </summary>
-		public const uint Version = 2;
+		public const uint Version = 3;
 
 		private readonly long NodesOffset;
 		private readonly long NamesOffset;
-		private readonly long SortListsOffset;
 
 		private readonly string TreeLocation;
 
@@ -78,18 +77,10 @@ namespace liblistfile
 		/// <summary>
 		/// Creates a new <see cref="OptimizedNodeTree"/> from a data stream.
 		/// </summary>
-		/// <param name="treeLocation"></param>
+		/// <param name="treeStream">The stream to read the tree from.</param>
 		/// <exception cref="ArgumentException"></exception>
-		public OptimizedNodeTree(string treeLocation)
+		public OptimizedNodeTree(Stream treeStream)
 		{
-			if (!File.Exists(treeLocation))
-			{
-				throw new NodeTreeNotFoundException();
-			}
-
-			this.TreeLocation = treeLocation;
-
-			var treeStream = File.Open(this.TreeLocation, FileMode.Open, FileAccess.Read, FileShare.Read);
 			this.TreeReader = new BinaryReader(treeStream);
 
 			var storedVersion = this.TreeReader.ReadUInt32();
@@ -102,7 +93,6 @@ namespace liblistfile
 			// Latest implementation
 			this.NodesOffset = this.TreeReader.ReadInt64();
 			this.NamesOffset = this.TreeReader.ReadInt64();
-			this.SortListsOffset = this.TreeReader.ReadInt64();
 		}
 
 		/// <summary>
