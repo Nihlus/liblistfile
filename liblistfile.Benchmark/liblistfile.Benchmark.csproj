@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Data\sample-data.txt" />
+      <EmbeddedResource Include="Data\big-sample-data.txt" />
       <EmbeddedResource Include="Data\sample-data.txt" />
     </ItemGroup>
 
