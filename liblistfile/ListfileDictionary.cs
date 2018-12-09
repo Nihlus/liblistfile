@@ -246,9 +246,9 @@ namespace ListFile
         /// Adds new words from a new term.
         /// </summary>
         /// <param name="term">Term.</param>
-        /// <param name="bSortDictionary">Whether or not the dictionary should be sorted after words have been added.</param>
+        /// <param name="shouldSortDictionary">Whether or not the dictionary should be sorted after words have been added.</param>
         [PublicAPI]
-        public void AddNewTermWords([NotNull] string term, bool bSortDictionary = true)
+        public void AddNewTermWords([NotNull] string term, bool shouldSortDictionary = true)
         {
             foreach (var word in GetWordsFromTerm(Path.GetFileNameWithoutExtension(term)))
             {
@@ -258,7 +258,7 @@ namespace ListFile
                 }
             }
 
-            if (bSortDictionary)
+            if (shouldSortDictionary)
             {
                 DictionaryWords.Sort((s, s1) => CompareWordsByLength(s.AsSpan(), s1.AsSpan()));
             }
