@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "liblistfile", "liblistfile\liblistfile.csproj", "{CE32160A-4A61-4813-93A5-D9DFDD7AB470}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "liblistfile.Benchmark", "liblistfile.Benchmark\liblistfile.Benchmark.csproj", "{75DBF4AA-83A0-4BD2-A4BC-02D3D99203A5}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Release|Any CPU = Release|Any CPU
@@ -15,9 +13,5 @@ Global
 		{CE32160A-4A61-4813-93A5-D9DFDD7AB470}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CE32160A-4A61-4813-93A5-D9DFDD7AB470}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CE32160A-4A61-4813-93A5-D9DFDD7AB470}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{75DBF4AA-83A0-4BD2-A4BC-02D3D99203A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{75DBF4AA-83A0-4BD2-A4BC-02D3D99203A5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{75DBF4AA-83A0-4BD2-A4BC-02D3D99203A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{75DBF4AA-83A0-4BD2-A4BC-02D3D99203A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -13,23 +13,11 @@
         <e p="Dictionary" t="Include">
           <e p="dictionary.dic" t="Include" />
         </e>
-        <e p="Exceptions" t="Include">
-          <e p="NodeTreeNotFoundException.cs" t="Include" />
-          <e p="UnsupportedNodeTreeVersionException.cs" t="Include" />
-        </e>
         <e p="ExtensionMethods.cs" t="Include" />
         <e p="ListfileDictionary.cs" t="Include" />
         <e p="ListfileDictionaryEntry.cs" t="Include" />
-        <e p="NodeTree" t="Include">
-          <e p="MultiPackageNodeTreeBuilder.cs" t="Include" />
-          <e p="Node.cs" t="Include" />
-          <e p="NodeIdentifier.cs" t="Include" />
-          <e p="NodeTreeBuilder.cs" t="Include" />
-          <e p="NodeType.cs" t="Include" />
-        </e>
         <e p="OptimizedList.cs" t="Include" />
         <e p="OptimizedListContainer.cs" t="Include" />
-        <e p="OptimizedNodeTree.cs" t="Include" />
         <e p="PathUtilities.cs" t="Include" />
         <e p="Score" t="Include">
           <e p="TermScore.cs" t="Include" />
