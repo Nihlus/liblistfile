@@ -9,7 +9,7 @@
     <RootNamespace>ListFile</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
-    <Version>3.0.0-rc7</Version>
+    <Version>3.0.0-rc8</Version>
     <PackageReleaseNotes>Move tree generation code to a new library.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
@@ -18,7 +18,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="libwarcraft" Version="2.7.0" />
+    <PackageReference Include="libwarcraft" Version="2.8.0" />
     <PackageReference Include="SharpCompress" Version="0.22.0" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>

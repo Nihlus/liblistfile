@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <Authors>Jarl Gullberg</Authors>
-    <PackageLicense>https://www.gnu.org/licenses/gpl-3.0.txt</PackageLicense>
+    <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.txt</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageTags>mono;netcore;netstandard</PackageTags>
     <RepositoryUrl>https://github.com/Nihlus/liblistfile</RepositoryUrl>
